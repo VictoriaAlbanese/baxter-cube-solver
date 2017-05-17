@@ -20,32 +20,58 @@ using namespace std;
 // default contructor
 // fill the face with one color
 Face::Face(int color) {
-
 	for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 3; j++) {
 			face[i][j] = color;
 		}
 	}
-	
 }
 
 // face match contructor
 // fills face as speciied
 Face::Face(int color_matrix[3][3]) {
-
 	for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 3; j++) {
 			face[i][j] = color_matrix[i][j];
 		}
 	}
-	
 }
 
-// rotate the face to the left
-void Face::rotate_left() {}
+// rotate the face clockwise
+void Face::rotate_cw() {
+	this->transpose();
+	for (int i = 0; i < 3; i++) {
+    		for (int j = 0; j < 1; j++) {
+      			swap(this->face[i][j], this->face[i][2-j]);
+    		}
+	}
+}
 
-// rotate the face to the right
-void Face::rotate_right() {}
+// rotate the face counterclockwise
+void Face::rotate_ccw() {
+	this->transpose();
+	for (int j = 0; j < 3; j++) {
+    		for (int i = 0; i < 1; i++) {
+      			swap(this->face[i][j], this->face[i][2-j]);
+    		}
+	}
+}
+
+// transpose face
+void Face::transpose() {
+	for(int i = 0; i < 3; i++) {
+  		for(int j = i; j < 3; j++) {  
+    			swap(this->face[i][j], this->face[j][i]);
+ 		}
+	}
+}
+
+// swap function
+void swap( int * first, int * second) {
+	int temp = *first;
+	*first = *second;
+	*second = temp;
+}
 
 // print the face
 void Face::print_face() {

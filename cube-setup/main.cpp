@@ -12,12 +12,27 @@ int main() {
 	Face white(WHITE);
 	Face yellow(YELLOW);
 
-	yellow.print_face();
-	blue.print_face();
-	red.print_face();
-	green.print_face();
-	white.print_face();
-	orange.print_face();
+	int color_matrix[3][3] = {{WHITE, RED, WHITE}, {RED, RED, ORANGE}, {RED, YELLOW, YELLOW}};
+	Face interesting(color_matrix);
+		
+	interesting.print_face();
+	interesting.rotate_cw();
+	interesting.print_face();
+
+	interesting.rotate_cw();
+	interesting.rotate_cw();
+	interesting.print_face();
+
+	/*
+	interesting.rotate_left();
+	interesting.print_face();
+
+	interesting.rotate_right();
+	interesting.print_face();
+
+	interesting.rotate_right();
+	interesting.print_face();
+	*/
 
 	return 0;
 

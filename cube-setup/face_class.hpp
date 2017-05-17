@@ -28,9 +28,11 @@ class Face {
 		Face(int color = -1);
 		Face(int color_matrix[3][3]);
 
+		void rotate_cw();
+		void rotate_ccw();
+		void transpose();
+		
 		void print_face();
-		void rotate_left();
-		void rotate_right();
 		
 };
 
