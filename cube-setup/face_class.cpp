@@ -10,7 +10,6 @@
 #ifndef FACE_CLASS_HPP
 #define FACE_CLASS_HPP
 
-#include <iostream>
 #include "face_class.hpp"
 
 using namespace std;
