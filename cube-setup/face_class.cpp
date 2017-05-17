@@ -41,9 +41,7 @@ Face::Face(int color_matrix[3][3]) {
 void Face::rotate_cw() {
 	this->transpose();
 	for (int i = 0; i < 3; i++) {
-    		for (int j = 0; j < 1; j++) {
-      			swap(this->face[i][j], this->face[i][2-j]);
-    		}
+      		swap(this->face[i][0], this->face[i][2]);
 	}
 }
 
@@ -51,9 +49,7 @@ void Face::rotate_cw() {
 void Face::rotate_ccw() {
 	this->transpose();
 	for (int j = 0; j < 3; j++) {
-    		for (int i = 0; i < 1; i++) {
-      			swap(this->face[i][j], this->face[i][2-j]);
-    		}
+      		swap(this->face[0][j], this->face[0][2-j]);
 	}
 }
 
