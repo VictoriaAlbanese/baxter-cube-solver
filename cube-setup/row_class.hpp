@@ -21,7 +21,6 @@ class Row {
 	private:
 		int row[12];
 		int start_index;
-		int end_index;
 
 	public:
 		Row(int color = -1);
