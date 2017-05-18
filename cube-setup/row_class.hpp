@@ -2,41 +2,41 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Programmer: Victoria Albanese
-// File name: face_class.hpp
-// Purpose: Make a class to represent a Rubik's cube's face
+// File name: row_class.hpp
+// Purpose: Make a class to represent a Rubik's cube's rows 
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef FACE_CLASS_HPP
-#define FACE_CLASS_HPP
+#ifndef ROW_CLASS_HPP
+#define ROW_CLASS_HPP
 
 #include "helper.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// Face Class
+// Cube Class
 
-class Face {
+class Row {
 
 	private:
-		int face[3][3];
+		int row[12];
+		int start_index;
+		int end_index;
 
 	public:
+		Row(int color = -1);
+		Row(int color_matrix[12]);
 
-		Face(int color = -1);
-		Face(int color_matrix[3][3]);
+		void turn_cw();
+		void turn_ccw();
 
-		void rotate_cw();
-		void rotate_ccw();
-		void transpose();
-		
-		void print_face();
+		void print_row();	
 
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#endif // end of FACE_CLASS_HPP
+#endif // end ROW_CLASS_HPP
 
 ////////////////////////////////////////////////////////////////////////////////
 
