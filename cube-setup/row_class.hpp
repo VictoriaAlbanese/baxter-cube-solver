@@ -10,7 +10,12 @@
 #ifndef ROW_CLASS_HPP
 #define ROW_CLASS_HPP
 
+#include <iostream>
+#include <cstdlib>
+#include <vector>
 #include "helper.hpp"
+
+using std::vector;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -19,12 +24,12 @@
 class Row {
 
 	private:
-		int row[12];
+		vector<int> row;
 		int start_index;
 
 	public:
 		Row(int color = -1);
-		Row(int color_matrix[12]);
+		Row(vector<int> color_matrix);
 
 		void turn_cw();
 		void turn_ccw();

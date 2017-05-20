@@ -7,7 +7,6 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <iostream>
 #include "row_class.hpp"
 
 using namespace std;
@@ -19,15 +18,19 @@ using namespace std;
 Row::Row(int color) {
 	this->start_index = 0;
 	for (int i = 0; i < 12; i++) {
-		this->row[i] = color;
+		this->row.push_back(color);
 	}
 }
 
 
-Row::Row(int color_matrix[12]) {
+Row::Row(vector<int> color_matrix) {
+	if (color_matrix.size() != 12) {
+		cout << "Row size invalid: should be 12" << endl;
+		exit(1);
+	}
 	this->start_index = 0;
 	for (int i = 0; i < 12; i++) {
-		this->row[i] = color_matrix[i];
+		this->row.push_back(color_matrix[i]);
 	}
 }
 
