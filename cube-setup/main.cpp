@@ -8,27 +8,47 @@ using namespace std;
 
 int main() {
 
-	/*
+	
 	// Face Testing
+	
+	//Face blank_face;
+	//blank_face.print_face();
 
-	Face blank_face;
-	blank_face.print_face();
+	//Face red_face(RED);
+	//red_face.print_face();
+	
+	vector< vector<int> > face_color_matrix;
+	vector<int> temp_row1;
+	vector<int> temp_row2;
+	vector<int> temp_row3;
+	
+	temp_row1.push_back(WHITE);
+	temp_row1.push_back(RED);
+	temp_row1.push_back(WHITE);
+	
+	temp_row2.push_back(RED);
+	temp_row2.push_back(RED);
+	temp_row2.push_back(ORANGE);
+	
+	temp_row3.push_back(RED);
+	temp_row3.push_back(YELLOW);
+	temp_row3.push_back(YELLOW);
 
-	Face red_face(RED);
-	red_face.print_face();
+	face_color_matrix.push_back(temp_row1);
+	face_color_matrix.push_back(temp_row2);
+	face_color_matrix.push_back(temp_row3);
 
-	int face_color_matrix[3][3] = {{WHITE, RED, WHITE}, {RED, RED, ORANGE}, {RED, YELLOW, YELLOW}};
 	Face interesting_face(face_color_matrix);
 	interesting_face.print_face();
 		
 	interesting_face.rotate_cw();
 	interesting_face.print_face();
-
-	interesting_face.rotate_cw();
-	interesting_face.rotate_cw();
+	
+	interesting_face.rotate_ccw();
+	interesting_face.rotate_ccw();
 	interesting_face.print_face();
-	*/
-
+	
+	/*
 	// Row Testing
 
 	Row blank_row;
@@ -47,6 +67,12 @@ int main() {
 	interesting_row.turn_ccw();
 	interesting_row.turn_ccw();
 	interesting_row.print_row();
+	*/
+
+	// Cube Testing
+
+	
+
 
 	return 0;
 

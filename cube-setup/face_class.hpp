@@ -10,7 +10,13 @@
 #ifndef FACE_CLASS_HPP
 #define FACE_CLASS_HPP
 
+#include <iostream>
+#include <cstdlib>
+#include <vector>
+#include <iterator>
 #include "helper.hpp"
+
+using std::vector;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -19,16 +25,27 @@
 class Face {
 
 	private:
-		int face[3][3];
+		
+		vector< vector<int> > face;
+		
+		vector<int> row1;
+		vector<int> row2;
+		vector<int> row3;
+
+		vector<int> column1;
+		vector<int> column2;
+		vector<int> column3;
 
 	public:
 
 		Face(int color = -1);
-		Face(int color_matrix[3][3]);
+		Face(vector< vector<int> > color_matrix);
+
+		vector< vector<int> > get_face() { return this->face; }
+		void set_face(vector< vector<int> > new_face) { this->face = new_face; }
 
 		void rotate_cw();
 		void rotate_ccw();
-		void transpose();
 		
 		void print_face();
 
