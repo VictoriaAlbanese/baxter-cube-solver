@@ -3,7 +3,7 @@
 //
 // Programmer: Victoria Albanese
 // File name: face_class.cpp
-// Purpose: Make a class to represent a Rubik's cube's face
+// Purpose: Implement a class to represent a Rubik's cube's face
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -32,19 +32,32 @@ Face::Face()
 	this->face.push_back(this->row1);
 	this->face.push_back(this->row2);
 	this->face.push_back(this->row3);
+
+	this->adjacent_top = this;
+	this->adjacent_bottom = this;
+	this->adjacent_left = this;
+	this->adjacent_right = this;
 }
 
-Face::Face(vector< vector<int> > color_matrix) {
+Face::Face(vector< vector<int> > color_matrix) 
+{
 
-	if (color_matrix.size() != 3) {
+	if (color_matrix.size() != 3) 
+	{
 		cout << "Color matrix invalid size: must have three rows" << endl;
 		exit(1);
 	}
 
-	if (color_matrix[0].size() != 3	|| color_matrix[1].size() != 3 || color_matrix[2].size() != 3) {
+	if (color_matrix[0].size() != 3	|| color_matrix[1].size() != 3 || color_matrix[2].size() != 3) 
+	{
 		cout << "Color matrix invalid size: must have three columns" << endl;
 		exit(1);
 	}
+
+	this->adjacent_top = NULL;
+	this->adjacent_bottom = NULL;
+	this->adjacent_left = NULL;
+	this->adjacent_right = NULL;
 
 	this->row1 = color_matrix[0];
 	this->row2 = color_matrix[1];
@@ -53,20 +66,23 @@ Face::Face(vector< vector<int> > color_matrix) {
 	this->face.push_back(this->row1);
 	this->face.push_back(this->row2);
 	this->face.push_back(this->row3);
-	
 
-	for (int i = 0; i < 3; i++) {
+	for (int i = 0; i < 3; i++) 
+	{
 		this->column1.push_back(color_matrix[i][0]);
 	}
 
-	for (int i = 0; i < 3; i++) {
+	for (int i = 0; i < 3; i++) 
+	{
 		this->column2.push_back(color_matrix[i][1]);
 	}
 
-	for (int i = 0; i < 3; i++) {
+	for (int i = 0; i < 3; i++) 
+	{
 		this->column3.push_back(color_matrix[i][2]);
 	}
 
+	
 }
 
 bool Face::operator==(const Face &other) 
@@ -87,8 +103,8 @@ bool Face::operator==(const Face &other)
 
 // Rotating Functions
 
-void Face::rotate_cw() {
-
+void Face::rotate_cw() 
+{
 	vector<int> temp_column1 = reverse_vector(this->column1);
 	vector<int> temp_column2 = reverse_vector(this->column2);
 	vector<int> temp_column3 = reverse_vector(this->column3);
@@ -107,11 +123,10 @@ void Face::rotate_cw() {
 	temp_face.push_back(this->row3);
 	
 	this->face = temp_face;
-
 }
 
-void Face::rotate_ccw() {
-
+void Face::rotate_ccw() 
+{
 	vector<int> temp_row1 = reverse_vector(this->row1);
 	vector<int> temp_row2 = reverse_vector(this->row2);
 	vector<int> temp_row3 = reverse_vector(this->row3);
@@ -130,15 +145,14 @@ void Face::rotate_ccw() {
 	temp_face.push_back(row3);
 
 	this->face = temp_face;
-
 }
 		
 ////////////////////////////////////////////////////////////////////////////////
 
 // Handle Printing
 
-void Face::print_face() {
-	
+void Face::print_face() 
+{
 	cout << endl;
 
 	vector< vector<int> >::iterator i;
@@ -155,7 +169,6 @@ void Face::print_face() {
 	}
 
 	cout << endl;
-
 }
 		
 ////////////////////////////////////////////////////////////////////////////////

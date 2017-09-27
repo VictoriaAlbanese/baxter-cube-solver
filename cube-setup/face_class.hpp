@@ -3,7 +3,7 @@
 //
 // Programmer: Victoria Albanese
 // File name: face_class.hpp
-// Purpose: Make a class to represent a Rubik's cube's face
+// Purpose: Declare a class to represent a Rubik's cube's face
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -12,6 +12,7 @@
 
 #include <iostream>
 #include <cstdlib>
+#include <cstddef>
 #include <vector>
 #include <iterator>
 #include "helper.hpp"
@@ -36,6 +37,11 @@ class Face {
 		vector<int> column2;
 		vector<int> column3;
 
+		Face * adjacent_top;
+		Face * adjacent_bottom;
+		Face * adjacent_left;
+		Face * adjacent_right;
+
 	public:
 
 		Face();
@@ -49,6 +55,10 @@ class Face {
 		vector<int> get_column1() { return this->column1; }
 		vector<int> get_column2() { return this->column2; }
 		vector<int> get_column3() { return this->column3; }
+		Face * get_adjacent_top() { return this->adjacent_top; }
+		Face * get_adjacent_bottom() { return this->adjacent_bottom; }
+		Face * get_adjacent_left() { return this->adjacent_left; }
+		Face * get_adjacent_right() { return this->adjacent_right; }
 		
 		void set_face(vector< vector<int> > new_face) { this->face = new_face; }
 		void set_row1(vector<int> new_row) { this->row1 = new_row; }
@@ -57,6 +67,10 @@ class Face {
 		void set_column1(vector<int> new_column) { this->column1 = new_column; }
 		void set_column2(vector<int> new_column) { this->column2 = new_column; }
 		void set_column3(vector<int> new_column) { this->column3 = new_column; }
+		void set_adjacent_top(Face * new_face) { this->adjacent_top = new_face; }
+		void set_adjacent_bottom(Face * new_face) { this->adjacent_bottom = new_face; }
+		void set_adjacent_left(Face * new_face) { this->adjacent_left = new_face; }
+		void set_adjacent_right(Face * new_face) { this->adjacent_right = new_face; }
 
 		void rotate_cw();
 		void rotate_ccw();
@@ -64,8 +78,6 @@ class Face {
 		void print_face();
 
 };
-
-////////////////////////////////////////////////////////////////////////////////
 
 #endif // end of FACE_CLASS_HPP
 

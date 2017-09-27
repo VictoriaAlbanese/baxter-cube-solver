@@ -44,6 +44,43 @@ Cube::Cube(vector<Face> faces)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+// Connect the Faces Together
+
+void connect_faces() 
+{
+	this->front_face.set_adjacent_top(&(this->top_face));
+	this->front_face.set_adjacent_bottom(&(this->bottom_face));
+	this->front_face.set_adjacent_left(&(this->left_face));
+	this->front_face.set_adjacent_right(&(this->right_face));
+
+	this->back_face.set_adjacent_top(&(this->top_face));
+	this->back_face.set_adjacent_bottom(&(this->bottom_face));
+	this->back_face.set_adjacent_left(&(this->left_face));
+	this->back_face.set_adjacent_right(&(this->right_face));
+
+	this->left_face.set_adjacent_top(&(this->top_face));
+	this->left_face.set_adjacent_bottom(&(this->bottom_face));
+	this->left_face.set_adjacent_left(&(this->left_face));
+	this->left_face.set_adjacent_right(&(this->right_face));
+
+	this->right_face.set_adjacent_top(&(this->top_face));
+	this->right_face.set_adjacent_bottom(&(this->bottom_face));
+	this->right_face.set_adjacent_left(&(this->left_face));
+	this->right_face.set_adjacent_right(&(this->right_face));
+
+	this->top_face.set_adjacent_top(&(this->top_face));
+	this->top_face.set_adjacent_bottom(&(this->bottom_face));
+	this->top_face.set_adjacent_left(&(this->left_face));
+	this->top_face.set_adjacent_right(&(this->right_face));
+
+	this->bottom_face.set_adjacent_top(&(this->top_face));
+	this->bottom_face.set_adjacent_bottom(&(this->bottom_face));
+	this->bottom_face.set_adjacent_left(&(this->left_face));
+	this->bottom_face.set_adjacent_right(&(this->right_face));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 // Handle Printing
 	
 void Cube::print_cube() 

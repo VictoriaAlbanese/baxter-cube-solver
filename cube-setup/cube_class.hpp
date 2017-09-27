@@ -35,6 +35,7 @@ class Cube {
 
 		Cube();
 		Cube(vector<Face> faces); 
+
 		/*
 		Face get_front_face() { return this->front_face; }
 		Face get_back_face() { return this->back_face; }
@@ -50,7 +51,8 @@ class Cube {
 		void set_left_face(Face new_left_face) { this->left_face = new_left_face; }
 		void set_right_face(Face new_right_face) { this->right_face = new_right_face; }
 		*/
-	
+
+		void connect_faces();	
 		void print_cube(); 
 
 };
