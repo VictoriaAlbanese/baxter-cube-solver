@@ -53,3 +53,28 @@ void print_square(int color) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+// Append Vectors Function
+
+vector<int> append_vectors(vector<int> v1, vector<int> v2) {
+
+	vector<int> combined_vectors = v1;
+
+	for (int i = 0; i < v2.size(); i++) {
+		combined_vectors.push_back(v2[i]);
+	}
+
+	return combined_vectors;
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+// Reverse 3x3 Vector
+
+vector<int> reverse_vector(vector<int> v) {
+	swap(&v[0], &v[2]);
+	return v;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
