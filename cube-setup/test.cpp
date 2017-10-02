@@ -37,7 +37,7 @@ int main() {
 	//DefaultConstructor_CalledNormally_BlankCubeCreated();
 	Constructor_CalledNormally_CorrectCubeCreated();
 	RotateCW_CalledNormally_CubeIsRotatedCorrectly(); 
-	//RotateCCW_CalledNormally_CubeIsRotatedCorrectly(); 
+	RotateCCW_CalledNormally_CubeIsRotatedCorrectly(); 
 
 	return 0;
 

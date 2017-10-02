@@ -57,11 +57,15 @@ class Cube {
 		void rotate_front_cw(); 
 		void rotate_front_ccw(); 
 		
-		void fix_adjacent_top(Face face); 
-		void fix_adjacent_bottom(Face face); 
-		void fix_adjacent_left(Face face, vector<int> replacement_row); 
-		void fix_adjacent_right(Face face, vector<int> replacement_row); 
-		
+		void rotate_cw_adjacent_top(Face face); 
+		void rotate_cw_adjacent_bottom(Face face); 
+
+		void rotate_ccw_adjacent_top(Face face); 
+		void rotate_ccw_adjacent_bottom(Face face); 
+
+		void rotate_adjacent_left(Face face, vector<int> replacement_row); 
+		void rotate_adjacent_right(Face face, vector<int> replacement_row); 
+			
 		void print_cube(); 
 
 };
