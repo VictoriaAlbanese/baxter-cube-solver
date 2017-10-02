@@ -25,6 +25,8 @@ Cube::Cube()
 	this->bottom_face = blank_face;
 	this->left_face = blank_face;
 	this->right_face = blank_face;
+
+	connect_faces();
 }
 
 Cube::Cube(vector<Face> faces) 
@@ -40,13 +42,15 @@ Cube::Cube(vector<Face> faces)
 	this->bottom_face = faces[3];
 	this->left_face = faces[4];
 	this->right_face = faces[5];
+
+	connect_faces();
 } 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 // Connect the Faces Together
 
-void connect_faces() 
+void Cube::connect_faces() 
 {
 	this->front_face.set_adjacent_top(&(this->top_face));
 	this->front_face.set_adjacent_bottom(&(this->bottom_face));
@@ -55,28 +59,112 @@ void connect_faces()
 
 	this->back_face.set_adjacent_top(&(this->top_face));
 	this->back_face.set_adjacent_bottom(&(this->bottom_face));
-	this->back_face.set_adjacent_left(&(this->left_face));
-	this->back_face.set_adjacent_right(&(this->right_face));
+	this->back_face.set_adjacent_left(&(this->right_face));
+	this->back_face.set_adjacent_right(&(this->left_face));
 
 	this->left_face.set_adjacent_top(&(this->top_face));
 	this->left_face.set_adjacent_bottom(&(this->bottom_face));
-	this->left_face.set_adjacent_left(&(this->left_face));
-	this->left_face.set_adjacent_right(&(this->right_face));
+	this->left_face.set_adjacent_left(&(this->back_face));
+	this->left_face.set_adjacent_right(&(this->front_face));
 
 	this->right_face.set_adjacent_top(&(this->top_face));
 	this->right_face.set_adjacent_bottom(&(this->bottom_face));
-	this->right_face.set_adjacent_left(&(this->left_face));
-	this->right_face.set_adjacent_right(&(this->right_face));
+	this->right_face.set_adjacent_left(&(this->front_face));
+	this->right_face.set_adjacent_right(&(this->back_face));
 
-	this->top_face.set_adjacent_top(&(this->top_face));
-	this->top_face.set_adjacent_bottom(&(this->bottom_face));
+	this->top_face.set_adjacent_top(&(this->back_face));
+	this->top_face.set_adjacent_bottom(&(this->front_face));
 	this->top_face.set_adjacent_left(&(this->left_face));
 	this->top_face.set_adjacent_right(&(this->right_face));
 
-	this->bottom_face.set_adjacent_top(&(this->top_face));
-	this->bottom_face.set_adjacent_bottom(&(this->bottom_face));
+	this->bottom_face.set_adjacent_top(&(this->front_face));
+	this->bottom_face.set_adjacent_bottom(&(this->back_face));
 	this->bottom_face.set_adjacent_left(&(this->left_face));
 	this->bottom_face.set_adjacent_right(&(this->right_face));
+}
+	
+////////////////////////////////////////////////////////////////////////////////
+
+// Rotating Cube's Faces
+	
+void Cube::rotate_front_cw() 
+{
+	front_face.rotate_cw();
+	
+	vector<int> left_replacement_row = front_face.get_adjacent_bottom()->get_row1();
+	vector<int> right_replacement_row = front_face.get_adjacent_top()->get_row3();
+
+	fix_adjacent_top(front_face);
+	fix_adjacent_bottom(front_face);
+	fix_adjacent_left(front_face, left_replacement_row);
+	fix_adjacent_right(front_face, right_replacement_row);
+}
+
+void Cube::rotate_front_ccw() 
+{
+	front_face.rotate_ccw();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+// Rotation Helpers
+	
+void Cube::fix_adjacent_top(Face face) 
+{
+	vector<int> adjacent_left_column;
+	Face adjacent_left_face = *face.get_adjacent_left();		
+	
+	adjacent_left_column.push_back(adjacent_left_face.get_row3()[2]);
+	adjacent_left_column.push_back(adjacent_left_face.get_row2()[2]);
+	adjacent_left_column.push_back(adjacent_left_face.get_row1()[2]);
+
+	face.get_adjacent_top()->set_row3(adjacent_left_column);
+}
+
+void Cube::fix_adjacent_bottom(Face face)
+{
+	vector<int> adjacent_right_column;
+	Face adjacent_right_face = *face.get_adjacent_right();		
+	
+	adjacent_right_column.push_back(adjacent_right_face.get_row1()[0]);
+	adjacent_right_column.push_back(adjacent_right_face.get_row2()[0]);
+	adjacent_right_column.push_back(adjacent_right_face.get_row3()[0]);
+
+	face.get_adjacent_bottom()->set_row1(reverse_vector(adjacent_right_column));
+}
+
+void Cube::fix_adjacent_left(Face face, vector<int> replacement_row)
+{
+	Face adjacent_left_face = *face.get_adjacent_left();
+
+	vector<int> new_adjacent_left_row1 = adjacent_left_face.get_row1();
+	vector<int> new_adjacent_left_row2 = adjacent_left_face.get_row2();
+	vector<int> new_adjacent_left_row3 = adjacent_left_face.get_row3();
+	
+	new_adjacent_left_row1[2] = replacement_row[0];
+	new_adjacent_left_row2[2] = replacement_row[1];
+	new_adjacent_left_row3[2] = replacement_row[2];
+
+	face.get_adjacent_left()->set_row1(new_adjacent_left_row1);
+	face.get_adjacent_left()->set_row2(new_adjacent_left_row2);
+	face.get_adjacent_left()->set_row3(new_adjacent_left_row3);
+}
+
+void Cube::fix_adjacent_right(Face face, vector<int> replacement_row)
+{
+	Face adjacent_right_face = *face.get_adjacent_right();
+
+	vector<int> new_adjacent_right_row1 = adjacent_right_face.get_row1();
+	vector<int> new_adjacent_right_row2 = adjacent_right_face.get_row2();
+	vector<int> new_adjacent_right_row3 = adjacent_right_face.get_row3();
+	
+	new_adjacent_right_row1[0] = replacement_row[0];
+	new_adjacent_right_row2[0] = replacement_row[1];
+	new_adjacent_right_row3[0] = replacement_row[2];
+
+	face.get_adjacent_right()->set_row1(new_adjacent_right_row1);
+	face.get_adjacent_right()->set_row2(new_adjacent_right_row2);
+	face.get_adjacent_right()->set_row3(new_adjacent_right_row3);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -88,7 +176,7 @@ void Cube::print_cube()
 	Face blank_face;
 	vector< vector<int> > net_rows;
 	vector<int> temp_v1, temp_v2;
-
+	
 	temp_v1 = blank_face.get_row1();
 	temp_v2 = this->top_face.get_row1();
 	temp_v1.insert(temp_v1.end(), temp_v2.begin(), temp_v2.end());
@@ -167,7 +255,7 @@ void Cube::print_cube()
 	
 		cout << endl << endl;
 	}
-
+	
 	cout << endl;
 }
 

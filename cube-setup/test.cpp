@@ -20,6 +20,8 @@ void RotateCW_CalledNormally_FaceIsRotatedCorrectly();
 void RotateCCW_CalledNormally_FaceIsRotatedCorrectly(); 
 void DefaultConstructor_CalledNormally_BlankCubeCreated();
 void Constructor_CalledNormally_CorrectCubeCreated();
+void RotateCW_CalledNormally_CubeIsRotatedCorrectly(); 
+void RotateCCW_CalledNormally_CubeIsRotatedCorrectly(); 
 
 using namespace std;
 
@@ -34,8 +36,8 @@ int main() {
 	// Cube Testing
 	//DefaultConstructor_CalledNormally_BlankCubeCreated();
 	Constructor_CalledNormally_CorrectCubeCreated();
-
-	cout << "poop" << endl;
+	RotateCW_CalledNormally_CubeIsRotatedCorrectly(); 
+	//RotateCCW_CalledNormally_CubeIsRotatedCorrectly(); 
 
 	return 0;
 
@@ -114,6 +116,32 @@ void Constructor_CalledNormally_CorrectCubeCreated()
 	interesting_face_cube.print_cube();
 }
 
+void RotateCW_CalledNormally_CubeIsRotatedCorrectly() 
+{
+	// Create a mixed cube
+	vector<Face> faces = make_test_face_vector();
+	Cube interesting_face_cube(faces);
+
+	// Rotate the front face
+	interesting_face_cube.rotate_front_cw();
+
+	// Print face for manual checking
+	interesting_face_cube.print_cube();
+}
+
+void RotateCCW_CalledNormally_CubeIsRotatedCorrectly() 
+{
+	// Create a mixed cube
+	vector<Face> faces = make_test_face_vector();
+	Cube interesting_face_cube(faces);
+
+	// Rotate the front face
+	interesting_face_cube.rotate_front_ccw();
+
+	// Print face for manual checking
+	interesting_face_cube.print_cube();
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 // Helper Functions
@@ -183,17 +211,17 @@ vector<Face> make_test_face_vector()
 	temp_row2.clear();
 	temp_row3.clear();
 
-	temp_row1.push_back(RED);
-	temp_row1.push_back(RED);
 	temp_row1.push_back(WHITE);
+	temp_row1.push_back(WHITE);
+	temp_row1.push_back(BLUE);
 	
-	temp_row2.push_back(YELLOW);
+	temp_row2.push_back(RED);
 	temp_row2.push_back(GREEN);
-	temp_row2.push_back(WHITE);
+	temp_row2.push_back(ORANGE);
 	
-	temp_row3.push_back(RED);
-	temp_row3.push_back(YELLOW);
 	temp_row3.push_back(GREEN);
+	temp_row3.push_back(RED);
+	temp_row3.push_back(BLUE);
 
 	face_color_matrix.push_back(temp_row1);
 	face_color_matrix.push_back(temp_row2);
@@ -206,9 +234,9 @@ vector<Face> make_test_face_vector()
 	temp_row2.clear();
 	temp_row3.clear();
 
-	temp_row1.push_back(ORANGE);
-	temp_row1.push_back(BLUE);
-	temp_row1.push_back(BLUE);
+	temp_row1.push_back(WHITE);
+	temp_row1.push_back(RED);
+	temp_row1.push_back(GREEN);
 	
 	temp_row2.push_back(BLUE);
 	temp_row2.push_back(RED);
@@ -238,8 +266,8 @@ vector<Face> make_test_face_vector()
 	temp_row2.push_back(WHITE);
 	
 	temp_row3.push_back(WHITE);
-	temp_row3.push_back(RED);
-	temp_row3.push_back(GREEN);
+	temp_row3.push_back(YELLOW);
+	temp_row3.push_back(ORANGE);
 
 	face_color_matrix.push_back(temp_row1);
 	face_color_matrix.push_back(temp_row2);
@@ -252,15 +280,15 @@ vector<Face> make_test_face_vector()
 	temp_row2.clear();
 	temp_row3.clear();
 
-	temp_row1.push_back(BLUE);
+	temp_row1.push_back(ORANGE);
 	temp_row1.push_back(WHITE);
 	temp_row1.push_back(BLUE);
 	
-	temp_row2.push_back(RED);
+	temp_row2.push_back(YELLOW);
 	temp_row2.push_back(YELLOW);
 	temp_row2.push_back(RED);
 	
-	temp_row3.push_back(ORANGE);
+	temp_row3.push_back(RED);
 	temp_row3.push_back(GREEN);
 	temp_row3.push_back(YELLOW);
 
@@ -277,11 +305,11 @@ vector<Face> make_test_face_vector()
 
 	temp_row1.push_back(GREEN);
 	temp_row1.push_back(GREEN);
-	temp_row1.push_back(WHITE);
+	temp_row1.push_back(RED);
 	
 	temp_row2.push_back(ORANGE);
 	temp_row2.push_back(WHITE);
-	temp_row2.push_back(ORANGE);
+	temp_row2.push_back(BLUE);
 	
 	temp_row3.push_back(ORANGE);
 	temp_row3.push_back(GREEN);

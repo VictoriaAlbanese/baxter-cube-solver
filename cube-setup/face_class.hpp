@@ -33,10 +33,6 @@ class Face {
 		vector<int> row2;
 		vector<int> row3;
 
-		vector<int> column1;
-		vector<int> column2;
-		vector<int> column3;
-
 		Face * adjacent_top;
 		Face * adjacent_bottom;
 		Face * adjacent_left;
@@ -52,9 +48,6 @@ class Face {
 		vector<int> get_row1() { return this->row1; }
 		vector<int> get_row2() { return this->row2; }
 		vector<int> get_row3() { return this->row3; }
-		vector<int> get_column1() { return this->column1; }
-		vector<int> get_column2() { return this->column2; }
-		vector<int> get_column3() { return this->column3; }
 		Face * get_adjacent_top() { return this->adjacent_top; }
 		Face * get_adjacent_bottom() { return this->adjacent_bottom; }
 		Face * get_adjacent_left() { return this->adjacent_left; }
@@ -64,9 +57,6 @@ class Face {
 		void set_row1(vector<int> new_row) { this->row1 = new_row; }
 		void set_row2(vector<int> new_row) { this->row2 = new_row; }
 		void set_row3(vector<int> new_row) { this->row3 = new_row; }
-		void set_column1(vector<int> new_column) { this->column1 = new_column; }
-		void set_column2(vector<int> new_column) { this->column2 = new_column; }
-		void set_column3(vector<int> new_column) { this->column3 = new_column; }
 		void set_adjacent_top(Face * new_face) { this->adjacent_top = new_face; }
 		void set_adjacent_bottom(Face * new_face) { this->adjacent_bottom = new_face; }
 		void set_adjacent_left(Face * new_face) { this->adjacent_left = new_face; }
