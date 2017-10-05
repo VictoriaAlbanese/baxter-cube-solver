@@ -52,11 +52,24 @@ Cube::Cube(vector<Face> faces)
 
 void Cube::connect_faces() 
 {
+	Face positioned_top;
+	Face positioned_bottom;
+	Face positioned_left;
+	Face positioned_right;
+
 	this->front_face.set_adjacent_top(&(this->top_face));
 	this->front_face.set_adjacent_bottom(&(this->bottom_face));
 	this->front_face.set_adjacent_left(&(this->left_face));
 	this->front_face.set_adjacent_right(&(this->right_face));
+	/*
+	positioned_top = this->top_face;
+	positioned_top.rotate_cw();
+	positioned_top.rotate_cw();
 
+	positioned_bottom = this->bottom_face;
+	positioned_bottom.rotate_cw();
+	positioned_bottom.rotate_cw();
+	*/
 	this->back_face.set_adjacent_top(&(this->top_face));
 	this->back_face.set_adjacent_bottom(&(this->bottom_face));
 	this->back_face.set_adjacent_left(&(this->right_face));
@@ -87,30 +100,84 @@ void Cube::connect_faces()
 
 // Rotating Cube's Faces
 	
-void Cube::rotate_front_cw() 
+void Cube::rotate_face_cw(int face_id) 
 {
-	front_face.rotate_cw();
+	Face face;
+	switch (face_id) 
+	{
+		case FRONT:
+			face = front_face;
+			front_face.rotate_cw();
+			break;			
+		case BACK:
+			face = back_face;
+			back_face.rotate_cw();
+			break;
+		case TOP:
+			face = top_face;
+			top_face.rotate_cw();
+			break;
+		case BOTTOM:
+			face = bottom_face;
+			bottom_face.rotate_cw();
+			break;
+		case LEFT:
+			face = left_face;
+			left_face.rotate_cw();
+			break;
+		case RIGHT:
+			face = right_face;
+			right_face.rotate_cw();
+			break;
+	}
 	
-	vector<int> left_replacement_row = front_face.get_adjacent_bottom()->get_row1();
-	vector<int> right_replacement_row = front_face.get_adjacent_top()->get_row3();
+	vector<int> left_replacement_row = face.get_adjacent_bottom()->get_row1();
+	vector<int> right_replacement_row = face.get_adjacent_top()->get_row3();
 
-	rotate_cw_adjacent_top(front_face);
-	rotate_cw_adjacent_bottom(front_face);
-	rotate_adjacent_left(front_face, left_replacement_row);
-	rotate_adjacent_right(front_face, right_replacement_row);
+	rotate_cw_adjacent_top(face);
+	rotate_cw_adjacent_bottom(face);
+	rotate_adjacent_left(face, left_replacement_row);
+	rotate_adjacent_right(face, right_replacement_row);
 }
 
-void Cube::rotate_front_ccw() 
+void Cube::rotate_face_ccw(int face_id) 
 {
-	front_face.rotate_ccw();
+	Face face;
+	switch (face_id) 
+	{
+		case FRONT:
+			face = front_face;
+			front_face.rotate_ccw();
+			break;			
+		case BACK:
+			face = back_face;
+			back_face.rotate_ccw();
+			break;
+		case TOP:
+			face = top_face;
+			top_face.rotate_ccw();
+			break;
+		case BOTTOM:
+			face = bottom_face;
+			bottom_face.rotate_ccw();
+			break;
+		case LEFT:
+			face = left_face;
+			left_face.rotate_ccw();
+			break;
+		case RIGHT:
+			face = right_face;
+			right_face.rotate_ccw();
+			break;
+	}
 	
-	vector<int> left_replacement_row = reverse_vector(front_face.get_adjacent_top()->get_row3());
-	vector<int> right_replacement_row = reverse_vector(front_face.get_adjacent_bottom()->get_row1());
+	vector<int> left_replacement_row = reverse_vector(face.get_adjacent_top()->get_row3());
+	vector<int> right_replacement_row = reverse_vector(face.get_adjacent_bottom()->get_row1());
 
-	rotate_ccw_adjacent_top(front_face);
-	rotate_ccw_adjacent_bottom(front_face);
-	rotate_adjacent_left(front_face, left_replacement_row);
-	rotate_adjacent_right(front_face, right_replacement_row);
+	rotate_ccw_adjacent_top(face);
+	rotate_ccw_adjacent_bottom(face);
+	rotate_adjacent_left(face, left_replacement_row);
+	rotate_adjacent_right(face, right_replacement_row);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

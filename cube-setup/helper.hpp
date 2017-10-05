@@ -20,6 +20,13 @@
 #define WHITE 4
 #define YELLOW 5
 
+#define FRONT 0
+#define BACK 1
+#define TOP 2
+#define BOTTOM 3
+#define LEFT 4
+#define RIGHT 5
+
 using std::vector;
 
 void swap(int * first, int * second);
