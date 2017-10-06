@@ -51,9 +51,20 @@ class Cube {
 		void set_right_face(Face new_right_face) { this->right_face = new_right_face; }
 
 		void connect_faces();	
-		
-		void rotate_face_cw(int face_id); 
-		void rotate_face_ccw(int face_id); 
+							
+		void rotate_front_face_cw(); 
+		void rotate_back_face_cw(); 
+		void rotate_top_face_cw(); 
+		void rotate_bottom_face_cw(); 
+		void rotate_left_face_cw(); 
+		void rotate_right_face_cw(); 
+
+		void rotate_front_face_ccw(); 
+		void rotate_back_face_ccw(); 
+		void rotate_top_face_ccw(); 
+		void rotate_bottom_face_ccw(); 
+		void rotate_left_face_ccw(); 
+		void rotate_right_face_ccw(); 
 		
 		void rotate_cw_adjacent_top(Face face); 
 		void rotate_cw_adjacent_bottom(Face face); 

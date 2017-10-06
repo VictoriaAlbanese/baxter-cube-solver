@@ -20,8 +20,14 @@ void RotateCW_CalledNormally_FaceIsRotatedCorrectly();
 void RotateCCW_CalledNormally_FaceIsRotatedCorrectly(); 
 void DefaultConstructor_CalledNormally_BlankCubeCreated();
 void Constructor_CalledNormally_CorrectCubeCreated();
-void RotateCW_CalledNormally_CubeIsRotatedCorrectly(); 
-void RotateCCW_CalledNormally_CubeIsRotatedCorrectly(); 
+void RotateFrontCW_CalledNormally_CubeIsRotatedCorrectly(); 
+void RotateFrontCCW_CalledNormally_CubeIsRotatedCorrectly(); 
+void RotateBackCW_CalledNormally_CubeIsRotatedCorrectly(); 
+void RotateBackCCW_CalledNormally_CubeIsRotatedCorrectly(); 
+void RotateTopCW_CalledNormally_CubeIsRotatedCorrectly(); 
+void RotateTopCCW_CalledNormally_CubeIsRotatedCorrectly(); 
+void RotateBottomCW_CalledNormally_CubeIsRotatedCorrectly(); 
+void RotateBottomCCW_CalledNormally_CubeIsRotatedCorrectly(); 
 
 using namespace std;
 
@@ -36,13 +42,19 @@ int main() {
 	// Cube Testing
 	//DefaultConstructor_CalledNormally_BlankCubeCreated();
 	Constructor_CalledNormally_CorrectCubeCreated();
-	RotateCW_CalledNormally_CubeIsRotatedCorrectly(); 
-	//RotateCCW_CalledNormally_CubeIsRotatedCorrectly(); 
+	//RotateFrontCW_CalledNormally_CubeIsRotatedCorrectly(); 
+	//RotateFrontCCW_CalledNormally_CubeIsRotatedCorrectly(); 
+	//RotateBackCW_CalledNormally_CubeIsRotatedCorrectly(); 
+	//RotateBackCCW_CalledNormally_CubeIsRotatedCorrectly(); 
+	//RotateTopCW_CalledNormally_CubeIsRotatedCorrectly(); 
+	//RotateTopCCW_CalledNormally_CubeIsRotatedCorrectly(); 
+	RotateBottomCW_CalledNormally_CubeIsRotatedCorrectly(); 
+	RotateBottomCCW_CalledNormally_CubeIsRotatedCorrectly(); 
 
 	return 0;
 
 }
-
+	
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -116,27 +128,105 @@ void Constructor_CalledNormally_CorrectCubeCreated()
 	interesting_face_cube.print_cube();
 }
 
-void RotateCW_CalledNormally_CubeIsRotatedCorrectly() 
+void RotateFrontCW_CalledNormally_CubeIsRotatedCorrectly() 
 {
 	// Create a mixed cube
 	vector<Face> faces = make_test_face_vector();
 	Cube interesting_face_cube(faces);
 
 	// Rotate the front face
-	interesting_face_cube.rotate_face_cw(BACK);
+	interesting_face_cube.rotate_front_face_cw();
 
 	// Print face for manual checking
 	interesting_face_cube.print_cube();
 }
 
-void RotateCCW_CalledNormally_CubeIsRotatedCorrectly() 
+void RotateFrontCCW_CalledNormally_CubeIsRotatedCorrectly() 
 {
 	// Create a mixed cube
 	vector<Face> faces = make_test_face_vector();
 	Cube interesting_face_cube(faces);
 
 	// Rotate the front face
-	interesting_face_cube.rotate_face_ccw(BACK);
+	interesting_face_cube.rotate_front_face_ccw();
+
+	// Print face for manual checking
+	interesting_face_cube.print_cube();
+}
+
+void RotateBackCW_CalledNormally_CubeIsRotatedCorrectly() 
+{
+	// Create a mixed cube
+	vector<Face> faces = make_test_face_vector();
+	Cube interesting_face_cube(faces);
+
+	// Rotate the front face
+	interesting_face_cube.rotate_back_face_cw();
+
+	// Print face for manual checking
+	interesting_face_cube.print_cube();
+}
+
+void RotateBackCCW_CalledNormally_CubeIsRotatedCorrectly() 
+{
+	// Create a mixed cube
+	vector<Face> faces = make_test_face_vector();
+	Cube interesting_face_cube(faces);
+
+	// Rotate the front face
+	interesting_face_cube.rotate_back_face_ccw();
+
+	// Print face for manual checking
+	interesting_face_cube.print_cube();
+}
+
+void RotateTopCW_CalledNormally_CubeIsRotatedCorrectly() 
+{
+	// Create a mixed cube
+	vector<Face> faces = make_test_face_vector();
+	Cube interesting_face_cube(faces);
+
+	// Rotate the front face
+	interesting_face_cube.rotate_top_face_cw();
+
+	// Print face for manual checking
+	interesting_face_cube.print_cube();
+}
+
+void RotateTopCCW_CalledNormally_CubeIsRotatedCorrectly() 
+{
+	// Create a mixed cube
+	vector<Face> faces = make_test_face_vector();
+	Cube interesting_face_cube(faces);
+
+	// Rotate the front face
+	interesting_face_cube.rotate_top_face_ccw();
+
+	// Print face for manual checking
+	interesting_face_cube.print_cube();
+}
+
+void RotateBottomCW_CalledNormally_CubeIsRotatedCorrectly() 
+{
+	// Create a mixed cube
+	vector<Face> faces = make_test_face_vector();
+	Cube interesting_face_cube(faces);
+
+	// Rotate the front face
+	interesting_face_cube.rotate_bottom_face_cw();
+
+	// Print face for manual checking
+	interesting_face_cube.print_cube();
+}
+
+void RotateBottomCCW_CalledNormally_CubeIsRotatedCorrectly() 
+{
+	// Create a mixed cube
+	vector<Face> faces = make_test_face_vector();
+	Cube interesting_face_cube(faces);
+
+	// Rotate the front face
+	interesting_face_cube.rotate_bottom_face_ccw();
 
 	// Print face for manual checking
 	interesting_face_cube.print_cube();
