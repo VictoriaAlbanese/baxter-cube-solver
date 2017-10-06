@@ -28,6 +28,10 @@ void RotateTopCW_CalledNormally_CubeIsRotatedCorrectly();
 void RotateTopCCW_CalledNormally_CubeIsRotatedCorrectly(); 
 void RotateBottomCW_CalledNormally_CubeIsRotatedCorrectly(); 
 void RotateBottomCCW_CalledNormally_CubeIsRotatedCorrectly(); 
+void RotateLeftCW_CalledNormally_CubeIsRotatedCorrectly(); 
+void RotateLeftCCW_CalledNormally_CubeIsRotatedCorrectly(); 
+void RotateRightCW_CalledNormally_CubeIsRotatedCorrectly(); 
+void RotateRightCCW_CalledNormally_CubeIsRotatedCorrectly(); 
 
 using namespace std;
 
@@ -48,8 +52,12 @@ int main() {
 	//RotateBackCCW_CalledNormally_CubeIsRotatedCorrectly(); 
 	//RotateTopCW_CalledNormally_CubeIsRotatedCorrectly(); 
 	//RotateTopCCW_CalledNormally_CubeIsRotatedCorrectly(); 
-	RotateBottomCW_CalledNormally_CubeIsRotatedCorrectly(); 
-	RotateBottomCCW_CalledNormally_CubeIsRotatedCorrectly(); 
+	//RotateBottomCW_CalledNormally_CubeIsRotatedCorrectly(); 
+	//RotateBottomCCW_CalledNormally_CubeIsRotatedCorrectly(); 
+	//RotateLeftCW_CalledNormally_CubeIsRotatedCorrectly(); 
+	//RotateLeftCCW_CalledNormally_CubeIsRotatedCorrectly(); 
+	RotateRightCW_CalledNormally_CubeIsRotatedCorrectly(); 
+	RotateRightCCW_CalledNormally_CubeIsRotatedCorrectly(); 
 
 	return 0;
 
@@ -227,6 +235,32 @@ void RotateBottomCCW_CalledNormally_CubeIsRotatedCorrectly()
 
 	// Rotate the front face
 	interesting_face_cube.rotate_bottom_face_ccw();
+
+	// Print face for manual checking
+	interesting_face_cube.print_cube();
+}
+
+void RotateRightCW_CalledNormally_CubeIsRotatedCorrectly() 
+{
+	// Create a mixed cube
+	vector<Face> faces = make_test_face_vector();
+	Cube interesting_face_cube(faces);
+
+	// Rotate the front face
+	interesting_face_cube.rotate_right_face_cw();
+
+	// Print face for manual checking
+	interesting_face_cube.print_cube();
+}
+
+void RotateRightCCW_CalledNormally_CubeIsRotatedCorrectly() 
+{
+	// Create a mixed cube
+	vector<Face> faces = make_test_face_vector();
+	Cube interesting_face_cube(faces);
+
+	// Rotate the front face
+	interesting_face_cube.rotate_right_face_ccw();
 
 	// Print face for manual checking
 	interesting_face_cube.print_cube();
