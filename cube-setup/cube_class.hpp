@@ -75,6 +75,8 @@ class Cube {
 		void rotate_adjacent_left(Face face, vector<int> replacement_row); 
 		void rotate_adjacent_right(Face face, vector<int> replacement_row); 
 			
+		vector<int> get_column(Face face, int column, bool is_reversed);
+
 		void print_cube(); 
 
 };
