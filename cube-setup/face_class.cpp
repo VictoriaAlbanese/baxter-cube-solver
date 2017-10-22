@@ -71,6 +71,14 @@ bool Face::operator==(const Face &other)
 	
 	return is_equal;
 }
+	
+void Face::set_face(vector< vector<int> > new_face) 
+{ 
+	this->face = new_face; 
+	this->row1 = new_face[0];
+	this->row2 = new_face[1];
+	this->row3 = new_face[2];
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 

@@ -76,12 +76,11 @@ class Cube {
 		void rotate_adjacent_right(Face face, vector<int> replacement_row); 
 			
 		vector<int> get_column(Face face, int column, bool is_reversed);
+		vector< vector<int> > fix_face(Face face, int column, vector<int> replacement, bool is_reversed); 
 
 		void print_cube(); 
 
 };
-
-////////////////////////////////////////////////////////////////////////////////
 
 #endif // end of CUBE_CLASS_HPP
 

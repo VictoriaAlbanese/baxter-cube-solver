@@ -15,6 +15,7 @@
 #include <cstddef>
 #include <vector>
 #include <iterator>
+
 #include "helper.hpp"
 
 using std::vector;
@@ -53,7 +54,7 @@ class Face {
 		Face * get_adjacent_left() { return this->adjacent_left; }
 		Face * get_adjacent_right() { return this->adjacent_right; }
 		
-		void set_face(vector< vector<int> > new_face) { this->face = new_face; }
+		void set_face(vector< vector<int> > new_face); 
 		void set_row1(vector<int> new_row) { this->row1 = new_row; }
 		void set_row2(vector<int> new_row) { this->row2 = new_row; }
 		void set_row3(vector<int> new_row) { this->row3 = new_row; }
