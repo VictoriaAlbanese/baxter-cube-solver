@@ -56,9 +56,9 @@ int main() {
 	//RotateBottomCW_CalledNormally_CubeIsRotatedCorrectly(); 
 	//RotateBottomCCW_CalledNormally_CubeIsRotatedCorrectly(); 
 	//RotateLeftCW_CalledNormally_CubeIsRotatedCorrectly(); 
-	RotateLeftCCW_CalledNormally_CubeIsRotatedCorrectly(); 
+	//RotateLeftCCW_CalledNormally_CubeIsRotatedCorrectly(); 
 	//RotateRightCW_CalledNormally_CubeIsRotatedCorrectly(); // ? 
-	//RotateRightCCW_CalledNormally_CubeIsRotatedCorrectly(); // ?
+	RotateRightCCW_CalledNormally_CubeIsRotatedCorrectly(); // ?
 
 	return 0;
 

@@ -11,8 +11,13 @@
 #define CUBE_CLASS_HPP
 
 #include <iostream>
+#include <stdexcept>
 #include <vector>
+
 #include "face_class.hpp"
+
+#define CW 0
+#define CCW 1
 
 using namespace std;
 
@@ -23,18 +28,19 @@ using namespace std;
 class Cube {
 
 	private:
-
 		Face front_face;
 		Face back_face;
 		Face top_face;
 		Face bottom_face;
 		Face left_face;
 		Face right_face;
+		void connect_faces();	
 
 	public:
-
 		Cube();
 		Cube(vector<Face> faces); 
+		bool operator==(const Cube &other) const; 
+		bool operator!=(const Cube &other) const; 
 		
 		Face get_front_face() { return this->front_face; }
 		Face get_back_face() { return this->back_face; }
@@ -43,43 +49,17 @@ class Cube {
 		Face get_left_face() { return this->left_face; }
 		Face get_right_face() { return this->right_face; }
 		
-		void set_front_face(Face new_front_face) { this->front_face = new_front_face; }
-		void set_back_face(Face new_back_face) { this->back_face = new_back_face; }
-		void set_top_face(Face new_top_face) { this->top_face = new_top_face; }
-		void set_bottom_face(Face new_bottom_face) { this->bottom_face = new_bottom_face; }
-		void set_left_face(Face new_left_face) { this->left_face = new_left_face; }
-		void set_right_face(Face new_right_face) { this->right_face = new_right_face; }
+		void rotate_front_face(int direction); 
+		void rotate_back_face(int direction); 
+		void rotate_top_face(int direction); 
+		void rotate_bottom_face(int direction); 
+		void rotate_left_face(int direction); 
+		void rotate_right_face(int direction); 
 
-		void connect_faces();	
-							
-		void rotate_front_face_cw(); 
-		void rotate_back_face_cw(); 
-		void rotate_top_face_cw(); 
-		void rotate_bottom_face_cw(); 
-		void rotate_left_face_cw(); 
-		void rotate_right_face_cw(); 
-
-		void rotate_front_face_ccw(); 
-		void rotate_back_face_ccw(); 
-		void rotate_top_face_ccw(); 
-		void rotate_bottom_face_ccw(); 
-		void rotate_left_face_ccw(); 
-		void rotate_right_face_ccw(); 
-		
-		void rotate_cw_adjacent_top(Face face); 
-		void rotate_cw_adjacent_bottom(Face face); 
-
-		void rotate_ccw_adjacent_top(Face face); 
-		void rotate_ccw_adjacent_bottom(Face face); 
-
-		void rotate_adjacent_left(Face face, vector<int> replacement_row); 
-		void rotate_adjacent_right(Face face, vector<int> replacement_row); 
-			
 		vector<int> get_column(Face face, int column, bool is_reversed);
 		vector< vector<int> > fix_face(Face face, int column, vector<int> replacement, bool is_reversed); 
 
-		void print_cube(); 
-
+		void print(); 
 };
 
 #endif // end of CUBE_CLASS_HPP
