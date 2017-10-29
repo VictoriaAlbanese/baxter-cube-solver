@@ -40,8 +40,15 @@ Face::Face(vector< vector<int> > color_matrix)
 {
 	if (color_matrix.size() != 3) 
 	{
-		cout << "Color matrix invalid size: must have three rows" << endl;
-		exit(1);
+		throw invalid_argument("color matrix invalid size: must have three rows");
+	}
+
+	for (int i = 0; i < 3; i++) 
+	{
+		if (color_matrix[i].size() != 3) 
+		{
+			throw invalid_argument("color_matrix row invalid size: must have three elements");
+		}
 	}
 
 	this->adjacent_top = NULL;
@@ -58,26 +65,75 @@ Face::Face(vector< vector<int> > color_matrix)
 	this->face.push_back(this->row3);
 }
 
-bool Face::operator==(const Face &other) 
+bool Face::operator==(const Face &other) const 
 {
-	bool is_equal = true;
+	return (this->face == other.face 
+		&& this->row1 == other.row1 
+		&& this->row2 == other.row2 
+		&& this->row3 == other.row3);
+}
 
-	if (this->row1 != other.row1
-		|| this->row2 != other.row2
-		|| this->row3 != other.row3) 
-	{
-		is_equal = false;
-	}
-	
-	return is_equal;
+bool Face::operator!=(const Face &other) const 
+{
+	return !(this->face == other.face); 
 }
 	
-void Face::set_face(vector< vector<int> > new_face) 
+////////////////////////////////////////////////////////////////////////////////
+
+// Set Functions
+
+void Face::set_face(vector< vector<int> > color_matrix) 
 { 
-	this->face = new_face; 
-	this->row1 = new_face[0];
-	this->row2 = new_face[1];
-	this->row3 = new_face[2];
+	if (color_matrix.size() != 3) 
+	{
+		throw invalid_argument("color matrix invalid size: must have three rows");
+	}
+
+	for (int i = 0; i < 3; i++) 
+	{
+		if (color_matrix[i].size() != 3) 
+		{
+			throw invalid_argument("color_matrix row invalid size: must have three elements");
+		}
+	}
+
+	this->face = color_matrix; 
+	this->row1 = color_matrix[0];
+	this->row2 = color_matrix[1];
+	this->row3 = color_matrix[2];
+}
+
+void Face::set_row1(vector<int> new_row) 
+{
+ 	if (new_row.size() != 3) 
+	{
+		throw invalid_argument("new row invalid size: must have three elements");
+	}
+
+	this->row1 = new_row; 
+	this->face[0] = new_row;
+}
+
+void Face::set_row2(vector<int> new_row) 
+{
+ 	if (new_row.size() != 3) 
+	{
+		throw invalid_argument("new row invalid size: must have three elements");
+	}
+
+	this->row2 = new_row; 
+	this->face[1] = new_row;
+}
+
+void Face::set_row3(vector<int> new_row) 
+{
+ 	if (new_row.size() != 3) 
+	{
+		throw invalid_argument("new row invalid size: must have three elements");
+	}
+
+	this->row3 = new_row; 
+	this->face[2] = new_row;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

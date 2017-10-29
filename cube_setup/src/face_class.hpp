@@ -10,14 +10,15 @@
 #ifndef FACE_CLASS_HPP
 #define FACE_CLASS_HPP
 
-#include <iostream>
-#include <cstdlib>
 #include <cstddef>
-#include <vector>
+#include <iostream>
 #include <iterator>
+#include <stdexcept>
+#include <vector>
 
 #include "helper.hpp"
 
+using std::invalid_argument;
 using std::vector;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -27,24 +28,21 @@ using std::vector;
 class Face {
 
 	private:
-		
 		vector< vector<int> > face;
-		
 		vector<int> row1;
 		vector<int> row2;
 		vector<int> row3;
-
 		Face * adjacent_top;
 		Face * adjacent_bottom;
 		Face * adjacent_left;
 		Face * adjacent_right;
 
 	public:
-
 		Face();
 		Face(vector< vector<int> > color_matrix);
-		bool operator==(const Face &other); 
-
+		bool operator==(const Face &other) const; 
+		bool operator!=(const Face &other) const; 
+		
 		vector< vector<int> > get_face() { return this->face; }
 		vector<int> get_row1() { return this->row1; }
 		vector<int> get_row2() { return this->row2; }
@@ -53,11 +51,10 @@ class Face {
 		Face * get_adjacent_bottom() { return this->adjacent_bottom; }
 		Face * get_adjacent_left() { return this->adjacent_left; }
 		Face * get_adjacent_right() { return this->adjacent_right; }
-		
 		void set_face(vector< vector<int> > new_face); 
-		void set_row1(vector<int> new_row) { this->row1 = new_row; }
-		void set_row2(vector<int> new_row) { this->row2 = new_row; }
-		void set_row3(vector<int> new_row) { this->row3 = new_row; }
+		void set_row1(vector<int> new_row);
+		void set_row2(vector<int> new_row);
+		void set_row3(vector<int> new_row);
 		void set_adjacent_top(Face * new_face) { this->adjacent_top = new_face; }
 		void set_adjacent_bottom(Face * new_face) { this->adjacent_bottom = new_face; }
 		void set_adjacent_left(Face * new_face) { this->adjacent_left = new_face; }

@@ -31,9 +31,9 @@ Cube::Cube()
 
 Cube::Cube(vector<Face> faces) 
 {
-	if (faces.size() != 6) {
-		cout << "Invalid number of faces: expected 6" << endl;
-		exit(1);
+	if (faces.size() != 6) 
+	{
+		throw invalid_argument("Invalid number of faces: expected 6");
 	}
 
 	this->front_face = faces[0];
@@ -45,6 +45,28 @@ Cube::Cube(vector<Face> faces)
 
 	connect_faces();
 } 
+
+bool Cube::operator==(const Cube &other) const 
+{
+	bool is_same = true;
+
+	if (this->front_face != other.front_face
+		|| this->back_face != other.back_face
+		|| this->top_face != other.top_face
+		|| this->bottom_face != other.bottom_face
+		|| this->left_face != other.left_face
+		|| this->right_face != other.right_face) 
+	{
+		is_same = false;
+	}
+
+	return is_same;
+}
+
+bool Cube::operator!=(const Cube &other) const 
+{
+	return !(*this == other);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -87,10 +109,17 @@ void Cube::connect_faces()
 
 // Rotating Front Face
 	
-void Cube::rotate_front_face_cw() 
+void Cube::rotate_front_face(int direction) 
 {
+	// check validity of argument
+	if (direction != CW && direction != CCW) 
+	{
+		throw invalid_argument("Invalid direction: expected CW or CCW");
+	}
+
 	// rotate the face itself
-	front_face.rotate_cw();
+	if (direction == CW) front_face.rotate_cw();
+	else front_face.rotate_ccw();	
 
 	// get the adjacent faces
 	Face adjacent_left_face = *front_face.get_adjacent_left();		
@@ -99,44 +128,23 @@ void Cube::rotate_front_face_cw()
 	// save some cube state info
 	vector<int> left_replacement_row = front_face.get_adjacent_bottom()->get_row1();
 	vector<int> right_replacement_row = front_face.get_adjacent_top()->get_row3();
+	if (direction == CCW)
+	{
+		left_replacement_row = reverse(front_face.get_adjacent_top()->get_row3());
+		right_replacement_row = reverse(front_face.get_adjacent_bottom()->get_row1());
+	}
 
 	// fix the adjacent top face
-	vector<int> adjacent_left_column = get_column(adjacent_left_face, 2, true);
-	front_face.get_adjacent_top()->set_row3(adjacent_left_column);
+	vector <int> new_top_column;
+	if (direction == CW) new_top_column = get_column(adjacent_left_face, 2, true);
+	else new_top_column = get_column(adjacent_right_face, 0, false);
+	front_face.get_adjacent_top()->set_row3(new_top_column);
 
 	// fix the adjacent bottom face
-	vector<int> adjacent_right_column = get_column(adjacent_right_face, 0, false);
-	front_face.get_adjacent_bottom()->set_row1(reverse_vector(adjacent_right_column));
-
-	// fix the adjacent left face
-	vector< vector<int> > fixed_left_face = fix_face(adjacent_right_face, 2, left_replacement_row, false);
-	front_face.get_adjacent_left()->set_face(fixed_left_face);
-
-	// fix the adjacent right face
-	vector< vector<int> > fixed_right_face = fix_face(adjacent_right_face, 0, right_replacement_row, false);
-	front_face.get_adjacent_right()->set_face(fixed_right_face);
-}
-
-void Cube::rotate_front_face_ccw() 
-{
-	// rotate the face itself
-	front_face.rotate_ccw();	
-
-	// get the adjacent faces
-	Face adjacent_left_face = *front_face.get_adjacent_left();		
-	Face adjacent_right_face = *front_face.get_adjacent_right();		
-	
-	// save some cube state info
-	vector<int> left_replacement_row = reverse_vector(front_face.get_adjacent_top()->get_row3());
-	vector<int> right_replacement_row = reverse_vector(front_face.get_adjacent_bottom()->get_row1());
-
-	// fix the adjacent top face
-	vector<int> adjacent_right_column = get_column(adjacent_right_face, 0, false);
-	front_face.get_adjacent_top()->set_row3(adjacent_right_column);
-
-	// fix the adjacent bottom face
-	vector<int> adjacent_left_column = get_column(adjacent_left_face, 2, false);
-	front_face.get_adjacent_bottom()->set_row1(adjacent_left_column);
+	vector<int> new_bottom_column;
+	if (direction == CW) new_bottom_column = get_column(adjacent_right_face, 0, true);
+	else new_bottom_column = get_column(adjacent_left_face, 2, false);
+	front_face.get_adjacent_bottom()->set_row1(new_bottom_column);
 
 	// fix the adjacent left face
 	vector< vector<int> > fixed_left_face = fix_face(adjacent_left_face, 2, left_replacement_row, false);
@@ -151,10 +159,17 @@ void Cube::rotate_front_face_ccw()
 
 // Rotating Back Face
 	
-void Cube::rotate_back_face_cw() 
+void Cube::rotate_back_face(int direction) 
 {
+	// check validity of argument
+	if (direction != CW && direction != CCW) 
+	{
+		throw invalid_argument("Invalid direction: expected CW or CCW");
+	}
+
 	// rotate the face itself
-	back_face.rotate_cw();
+	if (direction == CW) back_face.rotate_cw();
+	else back_face.rotate_ccw();
 
 	// get the adjacent faces
 	Face adjacent_left_face = *back_face.get_adjacent_left();		
@@ -163,44 +178,23 @@ void Cube::rotate_back_face_cw()
 	// save some cube state info
 	vector<int> left_replacement_row = back_face.get_adjacent_bottom()->get_row3();
 	vector<int> right_replacement_row = back_face.get_adjacent_top()->get_row1();
+	if (direction == CCW)
+	{
+		left_replacement_row = reverse(back_face.get_adjacent_top()->get_row1());
+		right_replacement_row = reverse(back_face.get_adjacent_bottom()->get_row3());
+	}
 
 	// fix the adjacent top face
-	vector<int> adjacent_left_column = get_column(adjacent_left_face, 2, false);
-	back_face.get_adjacent_top()->set_row1(adjacent_left_column);
+	vector<int> new_top_column;
+	if (direction == CW) new_top_column = get_column(adjacent_left_face, 2, false);
+	else new_top_column = get_column(adjacent_right_face, 0, true);
+	back_face.get_adjacent_top()->set_row1(new_top_column);
 
 	// fix the adjacent bottom face
-	vector<int> adjacent_right_column = get_column(adjacent_right_face, 0, true);
-	back_face.get_adjacent_bottom()->set_row3(reverse_vector(adjacent_right_column));
-
-	// fix the adjacent left face
-	vector< vector<int> > fixed_left_face = fix_face(adjacent_left_face, 2, left_replacement_row, true);
-	back_face.get_adjacent_left()->set_face(fixed_left_face);
-
-	// fix the adjacent right face
-	vector< vector<int> > fixed_right_face = fix_face(adjacent_right_face, 0, right_replacement_row, true);
-	back_face.get_adjacent_right()->set_face(fixed_right_face);
-}
-
-void Cube::rotate_back_face_ccw() 
-{
-	// rotate the face itself
-	back_face.rotate_ccw();	
-
-	// get the adjacent faces
-	Face adjacent_left_face = *back_face.get_adjacent_left();		
-	Face adjacent_right_face = *back_face.get_adjacent_right();		
-	
-	// save some cube state info
-	vector<int> left_replacement_row = reverse_vector(back_face.get_adjacent_top()->get_row1());
-	vector<int> right_replacement_row = reverse_vector(back_face.get_adjacent_bottom()->get_row3());
-
-	// fix the adjacent top face
-	vector<int> adjacent_right_column = get_column(adjacent_right_face, 0, true);
-	back_face.get_adjacent_top()->set_row1(adjacent_right_column);
-
-	// fix the adjacent bottom face
-	vector<int> adjacent_left_column = get_column(adjacent_left_face, 2, true);
-	back_face.get_adjacent_bottom()->set_row3(adjacent_left_column);
+	vector<int> new_bottom_column;
+	if (direction == CW) new_bottom_column = get_column(adjacent_right_face, 0, false);
+	else new_bottom_column = get_column(adjacent_left_face, 2, true);
+	back_face.get_adjacent_bottom()->set_row3(new_bottom_column);
 
 	// fix the adjacent left face
 	vector< vector<int> > fixed_left_face = fix_face(adjacent_left_face, 2, left_replacement_row, true);
@@ -215,71 +209,75 @@ void Cube::rotate_back_face_ccw()
 
 // Rotating Top Face
 	
-void Cube::rotate_top_face_cw() 
+void Cube::rotate_top_face(int direction) 
 {
+	// check validity of argument
+	if (direction != CW && direction != CCW) 
+	{
+		throw invalid_argument("Invalid direction: expected CW or CCW");
+	}
+
 	// rotate the face itself
-	top_face.rotate_cw();
+	if (direction == CW) top_face.rotate_cw();
+	else top_face.rotate_ccw();
 	
 	// save some cube state info
 	vector<int> left_replacement_row = top_face.get_adjacent_bottom()->get_row1();
 	vector<int> right_replacement_row = top_face.get_adjacent_top()->get_row1();
+	if (direction == CCW) 
+	{
+		left_replacement_row = top_face.get_adjacent_top()->get_row1();
+		right_replacement_row = top_face.get_adjacent_bottom()->get_row1();
+	}
 
-	// fix all four faces
-	top_face.get_adjacent_top()->set_row1(top_face.get_adjacent_left()->get_row1());
-	top_face.get_adjacent_bottom()->set_row1(top_face.get_adjacent_right()->get_row1());
+	// fix top face
+	if (direction == CW) top_face.get_adjacent_top()->set_row1(top_face.get_adjacent_left()->get_row1());
+	else top_face.get_adjacent_top()->set_row1(top_face.get_adjacent_right()->get_row1());		
+
+	// fix bottom face
+	if (direction == CW) top_face.get_adjacent_bottom()->set_row1(top_face.get_adjacent_right()->get_row1());
+	else top_face.get_adjacent_bottom()->set_row1(top_face.get_adjacent_left()->get_row1());		
+	
+	// fix left and right faces
 	top_face.get_adjacent_left()->set_row1(left_replacement_row);
 	top_face.get_adjacent_right()->set_row1(right_replacement_row);
-}
-
-void Cube::rotate_top_face_ccw() 
-{
-	// rotate the face itself
-	top_face.rotate_ccw();	
-	
-	// save some cube state info
-	vector<int> left_replacement_row = reverse_vector(top_face.get_adjacent_top()->get_row1());
-	vector<int> right_replacement_row = reverse_vector(top_face.get_adjacent_bottom()->get_row1());
-
-	// fix all four faces
-	top_face.get_adjacent_top()->set_row1(top_face.get_adjacent_right()->get_row1());		
-	top_face.get_adjacent_bottom()->set_row1(top_face.get_adjacent_left()->get_row1());		
-	top_face.get_adjacent_left()->set_row1(reverse_vector(left_replacement_row));
-	top_face.get_adjacent_right()->set_row1(reverse_vector(right_replacement_row));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 // Rotating Bottom Face
 	
-void Cube::rotate_bottom_face_cw() 
+void Cube::rotate_bottom_face(int direction) 
 {
+	// check validity of argument
+	if (direction != CW && direction != CCW) 
+	{
+		throw invalid_argument("Invalid direction: expected CW or CCW");
+	}
+
 	// rotate the face itself
-	bottom_face.rotate_cw();
+	if (direction == CW) bottom_face.rotate_cw();
+	else bottom_face.rotate_ccw();
 	
 	// save some cube state info
 	vector<int> left_replacement_row = bottom_face.get_adjacent_bottom()->get_row3();
 	vector<int> right_replacement_row = bottom_face.get_adjacent_top()->get_row3();
+	if (direction == CCW) 
+	{
+		left_replacement_row = bottom_face.get_adjacent_top()->get_row3();
+		right_replacement_row = bottom_face.get_adjacent_bottom()->get_row3();
+	}
 
-	// fix all four faces
-	bottom_face.get_adjacent_top()->set_row3(bottom_face.get_adjacent_left()->get_row3());
-	bottom_face.get_adjacent_bottom()->set_row3(reverse_vector(reverse_vector(bottom_face.get_adjacent_right()->get_row3())));
-	bottom_face.get_adjacent_left()->set_row3(left_replacement_row);
-	bottom_face.get_adjacent_right()->set_row3(right_replacement_row);
-}
+	// fix the top face
+	if (direction == CW) bottom_face.get_adjacent_top()->set_row3(bottom_face.get_adjacent_left()->get_row3());
+	else bottom_face.get_adjacent_top()->set_row3(top_face.get_adjacent_right()->get_row3());		
 
-void Cube::rotate_bottom_face_ccw() 
-{
-	// rotate the face itself
-	bottom_face.rotate_ccw();	
+	// fix the bottom
+	if (direction == CW) bottom_face.get_adjacent_bottom()->set_row3(bottom_face.get_adjacent_right()->get_row3());
+	else bottom_face.get_adjacent_bottom()->set_row3(top_face.get_adjacent_left()->get_row3());		
 	
-	// save some cube state info
-	vector<int> left_replacement_row = reverse_vector(bottom_face.get_adjacent_top()->get_row3());
-	vector<int> right_replacement_row = reverse_vector(bottom_face.get_adjacent_bottom()->get_row3());
-
-	// fix all four faces
-	bottom_face.get_adjacent_top()->set_row3(top_face.get_adjacent_right()->get_row3());		
-	bottom_face.get_adjacent_bottom()->set_row3(top_face.get_adjacent_left()->get_row3());		
-	bottom_face.get_adjacent_left()->set_row3(reverse_vector(left_replacement_row));
+	// fix left and right faces
+	bottom_face.get_adjacent_left()->set_row3(left_replacement_row);
 	bottom_face.get_adjacent_right()->set_row3(right_replacement_row);
 }
 
@@ -287,10 +285,17 @@ void Cube::rotate_bottom_face_ccw()
 
 // Rotating Left Face
 	
-void Cube::rotate_left_face_cw() 
+void Cube::rotate_left_face(int direction) 
 {
+	// check validity of argument
+	if (direction != CW && direction != CCW) 
+	{
+		throw invalid_argument("Invalid direction: expected CW or CCW");
+	}
+
 	// rotate the face itself
-	left_face.rotate_cw();
+	if (direction == CW) left_face.rotate_cw();
+	else left_face.rotate_ccw();	
 
 	// get the adjacent faces
 	Face adjacent_left_face = *left_face.get_adjacent_left();		
@@ -301,57 +306,39 @@ void Cube::rotate_left_face_cw()
 	// save some cube state info
 	vector<int> left_replacement_column = get_column(adjacent_bottom_face, 0, true);
 	vector<int> right_replacement_column = get_column(adjacent_top_face, 0, false);
+	vector<int> top_replacement_column = get_column(adjacent_left_face, 2, true);
+	vector<int> bottom_replacement_column = get_column(adjacent_right_face, 0, false);
+	if (direction == CCW) 
+	{
+		left_replacement_column = get_column(adjacent_top_face, 0, true);
+		right_replacement_column = get_column(adjacent_bottom_face, 0, false);
+		top_replacement_column = get_column(adjacent_right_face, 0, false);
+		bottom_replacement_column = get_column(adjacent_left_face, 2, false);
+
+	}
 
 	// fix the adjacent top face
-	vector<int> adjacent_left_column = get_column(adjacent_left_face, 2, true);
-	vector< vector<int> > fixed_top_face = fix_face(adjacent_top_face, 0, adjacent_left_column, false);
+	vector< vector<int> > fixed_top_face;
+	if (direction == CW) fixed_top_face = fix_face(adjacent_top_face, 0, top_replacement_column, false);
+	else fixed_top_face = fix_face(adjacent_top_face, 0, top_replacement_column, false);
 	left_face.get_adjacent_top()->set_face(fixed_top_face);
 
 	// fix the adjacent bottom face
-	vector<int> adjacent_right_column = get_column(adjacent_right_face, 0, false);
-	vector< vector<int> > fixed_bottom_face = fix_face(adjacent_bottom_face, 0, adjacent_right_column, false);
+	vector< vector<int> > fixed_bottom_face;
+	if (direction == CW) fixed_bottom_face = fix_face(adjacent_bottom_face, 0, bottom_replacement_column, false);
+	else fixed_bottom_face = fix_face(adjacent_bottom_face, 0, bottom_replacement_column, true);
 	left_face.get_adjacent_bottom()->set_face(fixed_bottom_face);
 
 	// fix the adjacent left face
-	vector< vector<int> > fixed_left_face = fix_face(adjacent_left_face, 2, left_replacement_column, false);
+	vector< vector<int> > fixed_left_face;
+	if (direction == CW) fixed_left_face = fix_face(adjacent_left_face, 2, left_replacement_column, false);
+	else fixed_left_face = fix_face(adjacent_left_face, 2, left_replacement_column, false);
 	left_face.get_adjacent_left()->set_face(fixed_left_face);
 
 	// fix the adjacent right face
-	vector< vector<int> > fixed_right_face = fix_face(adjacent_right_face, 0, right_replacement_column, false);
-	left_face.get_adjacent_right()->set_face(fixed_right_face);
-}
-
-void Cube::rotate_left_face_ccw() 
-{
-	// rotate the face itself
-	left_face.rotate_ccw();	
-
-	// get the adjacent faces
-	Face adjacent_left_face = *left_face.get_adjacent_left();		
-	Face adjacent_right_face = *left_face.get_adjacent_right();		
-	Face adjacent_top_face = *left_face.get_adjacent_top();		
-	Face adjacent_bottom_face = *left_face.get_adjacent_bottom();		
-	
-	// save some cube state info
-	vector<int> left_replacement_column = get_column(adjacent_top_face, 0, true);
-	vector<int> right_replacement_column = get_column(adjacent_bottom_face, 0, false);
-
-	// fix the adjacent top face
-	vector<int> adjacent_right_column = get_column(adjacent_right_face, 0, false);
-	vector< vector<int> > fixed_top_face = fix_face(adjacent_top_face, 0, adjacent_right_column, true);
-	left_face.get_adjacent_top()->set_face(fixed_top_face);
-
-	// fix the adjacent bottom face
-	vector<int> adjacent_left_column = get_column(adjacent_left_face, 2, false);
-	vector< vector<int> > fixed_bottom_face = fix_face(adjacent_bottom_face, 0, adjacent_left_column, true);
-	left_face.get_adjacent_bottom()->set_face(fixed_bottom_face);
-
-	// fix the adjacent left face
-	vector< vector<int> > fixed_left_face = fix_face(adjacent_left_face, 2, left_replacement_column, false);
-	left_face.get_adjacent_left()->set_face(fixed_left_face);
-
-	// fix the adjacent right face
-	vector< vector<int> > fixed_right_face = fix_face(adjacent_right_face, 0, right_replacement_column, false);
+	vector< vector<int> > fixed_right_face;
+	if (direction == CW) fixed_right_face = fix_face(adjacent_right_face, 0, right_replacement_column, false);
+	else fixed_right_face = fix_face(adjacent_right_face, 0, right_replacement_column, false);
 	left_face.get_adjacent_right()->set_face(fixed_right_face);
 }
 
@@ -359,10 +346,17 @@ void Cube::rotate_left_face_ccw()
 
 // Rotating Right Face
 	
-void Cube::rotate_right_face_cw() 
+void Cube::rotate_right_face(int direction) 
 {
+	// check validity of argument
+	if (direction != CW && direction != CCW) 
+	{
+		throw invalid_argument("Invalid direction: expected CW or CCW");
+	}
+
 	// rotate the face itself
-	right_face.rotate_cw();
+	if (direction == CW) right_face.rotate_cw();
+	else right_face.rotate_ccw();	
 
 	// get the adjacent faces
 	Face adjacent_left_face = *right_face.get_adjacent_left();		
@@ -373,57 +367,38 @@ void Cube::rotate_right_face_cw()
 	// save some cube state info
 	vector<int> left_replacement_column = get_column(adjacent_bottom_face, 2, false);
 	vector<int> right_replacement_column = get_column(adjacent_top_face, 2, true);
+	vector<int> top_replacement_column = get_column(adjacent_left_face, 2, true);
+	vector<int> bottom_replacement_column  = get_column(adjacent_right_face, 0, false);
+	if (direction == CCW) 
+	{
+		left_replacement_column = get_column(adjacent_top_face, 2, false);
+		right_replacement_column = get_column(adjacent_bottom_face, 2, true);
+		top_replacement_column = get_column(adjacent_right_face, 0, false);
+		bottom_replacement_column = get_column(adjacent_left_face, 2, false);
+	}
 
 	// fix the adjacent top face
-	vector<int> adjacent_left_column = get_column(adjacent_left_face, 2, true);
-	vector< vector<int> > fixed_top_face = fix_face(adjacent_top_face, 2, adjacent_left_column, true);
+	vector< vector<int> > fixed_top_face;
+	if (direction == CW) fixed_top_face = fix_face(adjacent_top_face, 2, top_replacement_column, true);
+	else fixed_top_face = fix_face(adjacent_top_face, 2, top_replacement_column, true); 
 	right_face.get_adjacent_top()->set_face(fixed_top_face);
 
 	// fix the adjacent bottom face
-	vector<int> adjacent_right_column  = get_column(adjacent_right_face, 0, false);
-	vector< vector<int> > fixed_bottom_face = fix_face(adjacent_bottom_face, 2, adjacent_right_column, true);
+	vector< vector<int> > fixed_bottom_face;
+	if (direction == CW) fixed_bottom_face = fix_face(adjacent_bottom_face, 2, bottom_replacement_column, true);
+	else fixed_bottom_face = fix_face(adjacent_bottom_face, 2, bottom_replacement_column, false);
 	right_face.get_adjacent_bottom()->set_face(fixed_bottom_face);
 
 	// fix the adjacent left face
-	vector< vector<int> > fixed_left_face = fix_face(adjacent_left_face, 2, left_replacement_column, false);
+	vector< vector<int> > fixed_left_face; 
+	if (direction == CW) fixed_left_face = fix_face(adjacent_left_face, 2, left_replacement_column, false);
+	else fixed_left_face = fix_face(adjacent_left_face, 2, left_replacement_column, false);
 	right_face.get_adjacent_left()->set_face(fixed_left_face);
 
 	// fix the adjacent right face
-	vector< vector<int> > fixed_right_face = fix_face(adjacent_right_face, 0, right_replacement_column, false);
-	right_face.get_adjacent_right()->set_face(fixed_right_face);
-}
-
-void Cube::rotate_right_face_ccw() 
-{
-	// rotate the face itself
-	right_face.rotate_ccw();	
-
-	// get the adjacent faces
-	Face adjacent_top_face = *right_face.get_adjacent_top();		
-	Face adjacent_bottom_face = *right_face.get_adjacent_bottom();		
-	Face adjacent_left_face = *right_face.get_adjacent_left();		
-	Face adjacent_right_face = *right_face.get_adjacent_right();		
-	
-	// save some cube state info
-	vector<int> left_replacement_column = get_column(adjacent_top_face, 2, false);
-	vector<int> right_replacement_column = get_column(adjacent_bottom_face, 2, true);
-
-	// fix the adjacent top face
-	vector<int> adjacent_right_column = get_column(adjacent_right_face, 0, false);
-	vector< vector<int> > fixed_top_face = fix_face(adjacent_top_face, 2, adjacent_right_column, false);
-	right_face.get_adjacent_top()->set_face(fixed_top_face);
-
-	// fix the adjacent bottom face
-	vector<int> adjacent_left_column = get_column(adjacent_left_face, 2, false);
-	vector< vector<int> > fixed_bottom_face = fix_face(adjacent_bottom_face, 2, adjacent_left_column, false);
-	right_face.get_adjacent_bottom()->set_face(fixed_bottom_face);
-
-	// fix the adjacent left face
-	vector< vector<int> > fixed_left_face = fix_face(adjacent_left_face, 2, left_replacement_column, false);
-	right_face.get_adjacent_left()->set_face(fixed_left_face);
-
-	// fix the adjacent right face
-	vector< vector<int> > fixed_right_face = fix_face(adjacent_right_face, 0, right_replacement_column, false);
+	vector< vector<int> > fixed_right_face;
+	if (direction == CW) fixed_right_face = fix_face(adjacent_right_face, 0, right_replacement_column, false);
+	else fixed_right_face = fix_face(adjacent_right_face, 0, right_replacement_column, false);
 	right_face.get_adjacent_right()->set_face(fixed_right_face);
 }
 
@@ -439,7 +414,7 @@ vector<int> Cube::get_column(Face face, int column, bool is_reversed)
 	new_column.push_back(face.get_row2()[column]);
 	new_column.push_back(face.get_row3()[column]);
 
-	if (is_reversed) return reverse_vector(new_column);
+	if (is_reversed) return reverse(new_column);
 	else return new_column;
 
 }
@@ -476,7 +451,7 @@ vector< vector<int> > Cube::fix_face(Face face, int column, vector<int> replacem
 
 // Handle Printing
 	
-void Cube::print_cube() 
+void Cube::print() 
 {
 	Face blank_face;
 	vector< vector<int> > net_rows;
