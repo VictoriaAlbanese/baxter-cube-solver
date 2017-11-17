@@ -20,8 +20,8 @@ Cloud::Cloud()
 // creates a cloud with set publishers and subscribers
 Cloud::Cloud(ros::NodeHandle handle) 
 {
-    this->point_pub = handle.advertise<geometry_msgs::Point>("highest_point", 100);
-    this->cloud_pub = handle.advertise<sensor_msgs::PointCloud2>("filtered_cloud", 100);
+    this->point_pub = handle.advertise<geometry_msgs::Point>("highest_point", 10);
+    this->cloud_pub = handle.advertise<sensor_msgs::PointCloud2>("filtered_cloud", 10);
 	this->cloud_sub = handle.subscribe("camera/depth/points", 1, &Cloud::callback, this);
 }
 
@@ -54,14 +54,37 @@ void Cloud::publish_point()
 // finds the highest point in the cloud
 void Cloud::set_highest_point() 
 {
-	// Convert the sensor_msgs::PointCloud2 to the pcl::PointCloud<pclPointXYZ type>
+    // Find the transformation between the point cloud and baxter
+    tf::StampedTransform transform;
+    try { this->listener.lookupTransform("/base", "/camera_depth_optical_frame", ros::Time(0), transform); }
+    catch (tf::TransformException &ex) 
+    {
+        ROS_ERROR("%s",ex.what());
+        ros::Duration(1.0).sleep();
+    }
+
+    //sensor_msgs::PointCloud2 new_cloud;
+    //ROS_INFO("point frame: %s", this->cloud.header.frame_id.c_str());	
+    //pcl_ros::transformPointCloud("/base", transform, this->cloud, new_cloud);
+    //ROS_INFO("transformed: %s", new_cloud.header.frame_id.c_str());	
+    
+	//point_cloud = rotate_points(point_cloud, -0.94);
+    /*sensor_msgs::PointCloud old_cloud;
+    sensor_msgs::PointCloud new_cloud;
+    sensor_msgs::convertPointCloud2ToPointCloud(this->cloud, old_cloud);
+    this->listener.waitForTransform("/camera_depth_optical_frame", "/base", old_cloud.header.stamp, ros::Duration(2.0));
+    this->listener.transformPointCloud("/base", old_cloud, new_cloud);
+    sensor_msgs::convertPointCloudToPointCloud2(old_cloud, this->cloud);
+    */
+    
+    // Convert the sensor_msgs::PointCloud2 to the pcl::PointCloud<pclPointXYZ type>
 	pcl::PointCloud<pcl::PointXYZ> point_cloud;
 	pcl::fromROSMsg(this->cloud, point_cloud);
 
-    // Rotate the cloud to get the world coordinates
+    // Rotate the points in the cloud
 	point_cloud = rotate_points(point_cloud, -0.94);
 
-	// Get the point in the cloud with the smallest y-coordinate
+    // Get the point in the cloud with the smallest y-coordinate
 	float smallest_point_value = INT_MAX;
 	int index = -1;
 	for (int i = 0; i < point_cloud.size(); i++) 
@@ -73,11 +96,19 @@ void Cloud::set_highest_point()
 		}
 	}
 
-    // Rotate the cloud to get the cloud back in baxter coordinates
+    // Rotate the cloud back
 	point_cloud = rotate_points(point_cloud, 0.94);
-	
+
+    // Get the highest point in terms of baxter instead of the point cloud
+    geometry_msgs::PointStamped p_in, p_out;
+    p_in.header.frame_id = "/camera_depth_optical_frame"; 
+    p_in.point.x = point_cloud.points[index].x;
+    p_in.point.y = point_cloud.points[index].y;
+    p_in.point.z = point_cloud.points[index].z;
+    this->listener.transformPoint("/base", p_in, p_out);
+
     // Set and print this point
-	this->highest_point = point_cloud.points[index];
+	this->highest_point = p_out.point;
 	ROS_INFO("%d (%f, %f, %f)", index, this->highest_point.x, this->highest_point.y, this->highest_point.z);
 }
 
@@ -96,7 +127,7 @@ void Cloud::remove_outliers()
 	// Do the thing
 	pcl::StatisticalOutlierRemoval<pcl::PCLPointCloud2> sor;
   	sor.setInputCloud(cloud_ptr);
-  	sor.setMeanK(50);
+  	sor.setMeanK(10);
   	sor.setStddevMulThresh(1.0);
   	sor.filter(filtered_cloud);
 

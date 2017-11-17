@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
     message_generation
     pcl_conversions
     pcl_ros
+    tf
 )
 
 ## System dependencies are found with CMake's conventions

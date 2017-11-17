@@ -23,7 +23,6 @@ Endpoint::Endpoint(ros::NodeHandle handle)
     while (!this->initialized) 
     {
         ros::spinOnce();
-        std::cout << "spinning" << std::endl;
     }
 }
 
