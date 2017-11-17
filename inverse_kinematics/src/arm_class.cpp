@@ -14,51 +14,58 @@
 Arm::Arm() 
 {
     this->arm_side = RIGHT;
-    this->is_enabled = false;
+    this->is_done = false;
 }
 
 Arm::Arm(ros::NodeHandle handle, bool arm_side)
 {
-    string pub_topic, sub_topic;
-    if (arm_side == LEFT) 
-    {
-        pub_topic = "/robot/limb/left/joint_command";
-        sub_topic = "/robot/limb/left/state";
-    }
-
-    else 
-    {
-        pub_topic = "/robot/limb/right/joint_command";
-        sub_topic = "/robot/limb/right/state";
-    }
+    string pub_topic;
+    if (arm_side == LEFT) pub_topic = "/robot/limb/left/joint_command";
+    else pub_topic = "/robot/limb/right/joint_command";
     
     this->arm_side = arm_side; 
-    this->is_enabled = false;
-    this->pub_enabled = handle.advertise<std_msgs::Bool>("/robot/set_super_enable", 10);
-    this->sub_enabled = handle.subscribe<baxter_core_msgs::AssemblyState>(sub_topic, 10, &Arm::state_cb, this);
+    this->is_done = false;
     this->pub = handle.advertise<baxter_core_msgs::JointCommand>(pub_topic, 10);
+    this->sub = handle.subscribe<sensor_msgs::JointState>("/robot/joint_states", 10, &Arm::update_current_joint_positions, this);
 }
 
-void Arm::state_cb(const baxter_core_msgs::AssemblyState::ConstPtr& msg) 
+void Arm::update_current_joint_positions(const sensor_msgs::JointStateConstPtr& msg) 
 {
-    this->is_enabled = msg->enabled;
+    // clear the current vector
+    this->current_joint_positions.clear();
+    
+    // update it with the new arm positions
+    for (size_t i = 0; i < msg->position.size(); i++)
+    {
+        if (msg->name[i].find((arm_side == LEFT ? "left" : "right")) != std::string::npos)
+        {   
+            this->current_joint_positions.push_back(msg->position[i]);
+        }   
+    }
+
+    // if the robot is in the correct position, 
+    // we can stop publishing commands to move
+    // otherwise, keep on publishing
+    if (this->is_positioned()) this->is_done = true;
+    else this->pub.publish(this->orders);
 }
 
-void Arm::toggle_enable() 
+bool Arm::is_positioned() 
 {
-    std_msgs::Bool toggle;
+    for(size_t i = 0; i < this->orders.command.size(); i++)
+    {
+        ROS_INFO("moving %s from [%f] to [%f]", orders.names[i].c_str(), this->current_joint_positions[i], this->orders.command[i]);
 
-    //if (!this->is_enabled) toggle.data = true;
-    //else toggle.data = false;
+        if(fabs(this->orders.command[i] - this->current_joint_positions[i]) > 0.03) {
+            return false;
+        }
+    }
 
-    toggle.data = true;
-    this->pub_enabled.publish(toggle);
+    return true;
 }
 
-void Arm::send_home(bool state) 
+void Arm::send_home() 
 {
-    if (state == SETUP && !this->is_enabled) this->toggle_enable();
-
     baxter_core_msgs::JointCommand msg;
     msg.mode = baxter_core_msgs::JointCommand::POSITION_MODE;
 
@@ -73,13 +80,13 @@ void Arm::send_home(bool state)
         msg.names.push_back("left_w2");
 
         msg.command.resize(msg.names.size());
-        msg.command[0] = 0.141;
-        msg.command[1] = 1.998;
-        msg.command[2] = 0.361;
-        msg.command[3] = -1,366;
+        msg.command[0] = 0.0; 
+        msg.command[1] = -0.8;
+        msg.command[2] = 0.0;
+        msg.command[3] = 1.3;
         msg.command[4] = 0.0;
-        msg.command[5] = 0.938;
-        msg.command[6] = 1.308;
+        msg.command[5] = 0.95; 
+        msg.command[6] = 0.0;
     }
 
     else
@@ -93,18 +100,17 @@ void Arm::send_home(bool state)
         msg.names.push_back("right_w2");
 
         msg.command.resize(msg.names.size());
-        msg.command[0] = -0.141;
-        msg.command[1] = 1.998;
-        msg.command[2] = -0.361;
-        msg.command[3] = -1,366;
-        msg.command[4] = 0.0;
-        msg.command[5] = 0.938;
-        msg.command[6] = -1.308;
+        msg.command[0] = 0.0;
+        msg.command[1] = -0.8;
+        msg.command[2] = 0.0; 
+        msg.command[3] = 1.3;
+        msg.command[4] = 0.0; 
+        msg.command[5] = 0.95;
+        msg.command[6] = 0.0; 
     }
 
-    this->pub.publish(msg);
-    
-    if (state == CLEANUP && this->is_enabled) this->toggle_enable();
+    this->orders = msg;
+    //this->pub.publish(msg);
 }
 
 //////////////////////////////////////////////////////////////

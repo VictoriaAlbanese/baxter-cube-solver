@@ -12,34 +12,33 @@
 #define ARM_CLASS_HPP
 
 #include "ros/ros.h"
-#include "std_msgs/Bool.h"
-#include "baxter_core_msgs/AssemblyState.h"
 #include "baxter_core_msgs/JointCommand.h"
+#include "sensor_msgs/JointState.h"
 
 #include <string>
 
 #define LEFT 0
 #define RIGHT 1
-#define CLEANUP 0
-#define SETUP 1
 
 using std::string;
+using std::vector;
 
 class Arm
 {
     private: 
         bool arm_side;
-        bool is_enabled;
-        ros::Publisher pub_enabled;
-        ros::Subscriber sub_enabled;
+        bool is_done;
+        baxter_core_msgs::JointCommand orders;
+        vector<double> current_joint_positions;
         ros::Publisher pub;
+        ros::Subscriber sub;
 
     public:
         Arm();
         Arm(ros::NodeHandle handle, bool arm_side); 
-        void state_cb(const baxter_core_msgs::AssemblyState::ConstPtr& msg);
-        void toggle_enable(); 
-        void send_home(bool state); 
+        void update_current_joint_positions(const sensor_msgs::JointStateConstPtr& msg);
+        bool is_positioned();
+        void send_home(); 
 };
 
 #endif // ARM_CLASS_HPP

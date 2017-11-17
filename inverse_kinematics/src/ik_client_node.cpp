@@ -50,7 +50,12 @@ int main(int argc, char **argv)
 
         // Get the endpoint setup
         Endpoint point(nh);
+        /*geometry_msgs::Point p;
+        p.x =  0.331; // 0.754; 
+        p.y = -0.114; // -0.284; 
+        p.z =  0.844; // 0.086; */
         geometry_msgs::PoseStamped pose = get_desired_pose(point.get_point());
+	    //ROS_INFO("(%f, %f, %f)", p.x, p.y, p.z); 
 	    ROS_INFO("(%f, %f, %f)", point.get_point().x, point.get_point().y, point.get_point().z);
 
         // Make the service request
@@ -113,16 +118,34 @@ geometry_msgs::PoseStamped get_desired_pose(geometry_msgs::Point new_point)
         geometry_msgs::Point point;
         point.x = new_point.x; 
         point.y = new_point.y;
-        point.z = new_point.z;
+        point.z = 0.15;
        
+        // The following math functions take a Roll, Pitch and Yaw and convert them to the XYZW for orientation.
+        // These Roll, Pitch and Yaw values correspond to the hand pointing straight down.
+        const double ROLL = 0, PITCH = 3.14, YAW = 0; // yaw should change
+ 
+        double mathc1 = cos(PITCH);
+        double maths1 = sin(PITCH);
+        double mathc2 = cos(YAW);
+        double maths2 = sin(YAW);
+        double mathc3 = cos(ROLL);
+        double maths3 = sin(ROLL);
+                                                                     
+        double oriw = sqrt(1.0 + mathc1 * mathc2 + mathc1 * mathc3 - maths1 * maths2 * maths3 + mathc2 * mathc3) / 2.0;
+        double oriw4 = (4.0 * oriw);
+        
+        double orix = (mathc2 * maths3 + mathc1 * maths3 + maths1 * maths2 * mathc3) / oriw4;
+        double oriy = (maths1 * mathc2 + maths1 * mathc3 + mathc1 * maths2 * maths3) / oriw4;
+        double oriz = (-maths1 * maths3 + mathc1 * maths2 * mathc3 + maths2) / oriw4;
+
         // Make the quaternion for the pose 
         geometry_msgs::Quaternion quaternion;
-        quaternion.x = -0.3000;
-        quaternion.y = 0.9538;
-        quaternion.z = 0.0017;
-        quaternion.w = -0.0005;
+        quaternion.x = orix; 
+        quaternion.y = oriy;
+        quaternion.z = oriz;
+        quaternion.w = oriw;
 
-        // Make the pose fot the pose_stamped
+        // Make the pose for the pose_stamped
         geometry_msgs::Pose pose;
         pose.position = point;
         pose.orientation = quaternion;

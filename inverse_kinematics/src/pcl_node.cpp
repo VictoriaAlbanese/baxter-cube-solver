@@ -25,7 +25,7 @@ int main(int argc, char ** argv)
     Cloud cloud(nh);
 
     // Make the markers
-    publish_markers(cloud.get_highest_point(), nh);
+    //publish_markers(cloud.get_highest_point(), nh);
 
     // Spin
     ros::spin();
