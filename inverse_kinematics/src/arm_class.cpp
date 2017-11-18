@@ -54,13 +54,14 @@ bool Arm::is_positioned()
 {
     for(size_t i = 0; i < this->orders.command.size(); i++)
     {
-        ROS_INFO("moving %s from [%f] to [%f]", orders.names[i].c_str(), this->current_joint_positions[i], this->orders.command[i]);
-
-        if(fabs(this->orders.command[i] - this->current_joint_positions[i]) > 0.03) {
+        if (fabs(this->orders.command[i] - this->current_joint_positions[i]) > 0.01) 
+        {
+            //ROS_INFO("moving %s from [%f] to [%f]", orders.names[i].c_str(), this->current_joint_positions[i], this->orders.command[i]);
             return false;
         }
     }
 
+    //ROS_INFO("arm positioned...");
     return true;
 }
 
@@ -71,19 +72,19 @@ void Arm::send_home()
 
     if (this->arm_side == LEFT) 
     {
-        msg.names.push_back("left_s0");
-        msg.names.push_back("left_s1");
         msg.names.push_back("left_e0");
         msg.names.push_back("left_e1");
+        msg.names.push_back("left_s0");
+        msg.names.push_back("left_s1");
         msg.names.push_back("left_w0");
         msg.names.push_back("left_w1");
         msg.names.push_back("left_w2");
 
         msg.command.resize(msg.names.size());
-        msg.command[0] = 0.0; 
-        msg.command[1] = -0.8;
-        msg.command[2] = 0.0;
-        msg.command[3] = 1.3;
+        msg.command[0] = 0.0;
+        msg.command[1] = 1.3;
+        msg.command[2] = 0.0; 
+        msg.command[3] = -0.8;
         msg.command[4] = 0.0;
         msg.command[5] = 0.95; 
         msg.command[6] = 0.0;
@@ -91,26 +92,25 @@ void Arm::send_home()
 
     else
     {
-        msg.names.push_back("right_s0");
-        msg.names.push_back("right_s1");
         msg.names.push_back("right_e0");
         msg.names.push_back("right_e1");
+        msg.names.push_back("right_s0");
+        msg.names.push_back("right_s1");
         msg.names.push_back("right_w0");
         msg.names.push_back("right_w1");
         msg.names.push_back("right_w2");
 
         msg.command.resize(msg.names.size());
-        msg.command[0] = 0.0;
-        msg.command[1] = -0.8;
-        msg.command[2] = 0.0; 
-        msg.command[3] = 1.3;
+        msg.command[0] = 0.0; 
+        msg.command[1] = 1.3;
+        msg.command[2] = 0.0;
+        msg.command[3] = -0.8;
         msg.command[4] = 0.0; 
         msg.command[5] = 0.95;
         msg.command[6] = 0.0; 
     }
 
     this->orders = msg;
-    //this->pub.publish(msg);
 }
 
 //////////////////////////////////////////////////////////////

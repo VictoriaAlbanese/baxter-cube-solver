@@ -10,6 +10,8 @@
 #include "ros/ros.h"
 #include "arm_class.hpp"
 
+enum State {INITIALIZING, FIND_CUBE};
+
 int main(int argc, char **argv)
 {
     // initialize the node and create a node handle
@@ -25,11 +27,27 @@ int main(int argc, char **argv)
     ros::spinOnce();
 
     // main program content
+    State state = INITIALIZING;
     while (ros::ok()) 
     {
-        // send the arms to their initial position
-        left_arm.send_home();
-        right_arm.send_home();
+        switch (state) 
+        {
+            case INITIALIZING:
+                
+                left_arm.send_home();
+                right_arm.send_home();
+                
+                if (left_arm.is_done && right_arm.is_done) 
+                {
+                    state = FIND_CUBE;
+                }
+
+                break;
+
+            case FIND_CUBE:
+                ROS_INFO("next stage");
+                break;
+        }
 
         // spin & sleep
         ros::spinOnce();
