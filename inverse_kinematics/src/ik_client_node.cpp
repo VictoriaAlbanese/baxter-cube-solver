@@ -28,11 +28,11 @@
 #define DUMMY_Y -0.8525
 #define DUMMY_Z 0.0388
 
-geometry_msgs::PoseStamped get_desired_pose(geometry_msgs::Point new_point);
+baxter_core_msgs::SolvePositionIK make_service_request(ros::NodeHandle handle); 
+geometry_msgs::PoseStamped get_pose(geometry_msgs::Point new_point);
+sensor_msgs::JointState get_iks(ros::ServiceClient client, baxter_core_msgs::SolvePositionIK service);
 
 using std::string;
-using std::cout;
-using std::endl;
 
 int main(int argc, char **argv)
 {
@@ -48,39 +48,9 @@ int main(int argc, char **argv)
         const string service_name = "ExternalTools/right/PositionKinematicsNode/IKService";
         ros::ServiceClient client = nh.serviceClient<baxter_core_msgs::SolvePositionIK>(service_name);
 
-        // Get the endpoint setup
-        Endpoint point(nh);
-        /*geometry_msgs::Point p;
-        p.x =  0.331; // 0.754; 
-        p.y = -0.114; // -0.284; 
-        p.z =  0.844; // 0.086; */
-        geometry_msgs::PoseStamped pose = get_desired_pose(point.get_point());
-	    //ROS_INFO("(%f, %f, %f)", p.x, p.y, p.z); 
-	    ROS_INFO("(%f, %f, %f)", point.get_point().x, point.get_point().y, point.get_point().z);
-
-        // Make the service request
-        baxter_core_msgs::SolvePositionIK service;
-        service.request.pose_stamp.resize(1);
-        service.request.pose_stamp[0] = pose;
-        service.request.seed_mode = 2;
-
-        // Report if the call to the service fails and exit
-        if (!client.call(service))
-        {
-            ROS_ERROR("Failure: unable to call service");
-            exit(1);
-        }
-
-        // Report if there is no ik solution and exit
-        if (!service.response.isValid[0]) 
-        {
-            ROS_ERROR("Failure: no valid ik joint solution");
-            exit(1);
-        }
-
-        // Put the request's solved joint states into a variable
-        sensor_msgs::JointState solved_state;
-        solved_state = service.response.joints[0];
+        // Make the service to fill out the request
+        baxter_core_msgs::SolvePositionIK service = make_service_request(nh);
+        sensor_msgs::JointState solved_state = get_iks(client, service);
 
         // Set the solved states to the new command message
         baxter_core_msgs::JointCommand msg;
@@ -105,9 +75,48 @@ int main(int argc, char **argv)
         return 0;
 }
 
+// GET IKS
+// Calls the service and gets the iks, or errors if there is none
+sensor_msgs::JointState get_iks(ros::ServiceClient client, baxter_core_msgs::SolvePositionIK service) 
+{
+        // Report if the call to the service fails and exit
+        if (!client.call(service))
+        {
+            ROS_ERROR("Failure: unable to call service");
+            exit(1);
+        }
+
+        // Report if there is no ik solution and exit
+        if (!service.response.isValid[0]) 
+        {
+            ROS_ERROR("Failure: no valid ik joint solution");
+            exit(1);
+        }
+
+        return service.response.joints[0];
+}
+
+// MAKE SERVICE REQUEST
+// Makes the service request by setting up the endpoint
+baxter_core_msgs::SolvePositionIK make_service_request(ros::NodeHandle handle) 
+{
+        // Get the endpoint setup
+        Endpoint point(handle);
+        geometry_msgs::PoseStamped pose = get_pose(point.get_point());
+	    ROS_INFO("(%f, %f, %f)", point.get_point().x, point.get_point().y, point.get_point().z);
+
+        // Make the service request
+        baxter_core_msgs::SolvePositionIK service;
+        service.request.pose_stamp.resize(1);
+        service.request.pose_stamp[0] = pose;
+        service.request.seed_mode = 2;
+
+        return service;
+} 
+
 // GET DESIRED POSE
 // Make the stamped_pose object; refactored from main
-geometry_msgs::PoseStamped get_desired_pose(geometry_msgs::Point new_point) 
+geometry_msgs::PoseStamped get_pose(geometry_msgs::Point new_point) 
 {
         // Make a header for the pose_stamped
         std_msgs::Header header = std_msgs::Header();
@@ -118,7 +127,7 @@ geometry_msgs::PoseStamped get_desired_pose(geometry_msgs::Point new_point)
         geometry_msgs::Point point;
         point.x = new_point.x; 
         point.y = new_point.y;
-        point.z = 0.15;
+        point.z = 0.0;
        
         // The following math functions take a Roll, Pitch and Yaw and convert them to the XYZW for orientation.
         // These Roll, Pitch and Yaw values correspond to the hand pointing straight down.

@@ -27,7 +27,6 @@ class Arm
 {
     private: 
         bool arm_side;
-        bool is_done;
         baxter_core_msgs::JointCommand orders;
         vector<double> current_joint_positions;
         ros::Publisher pub;
@@ -39,6 +38,7 @@ class Arm
         void update_current_joint_positions(const sensor_msgs::JointStateConstPtr& msg);
         bool is_positioned();
         void send_home(); 
+        bool is_done;
 };
 
 #endif // ARM_CLASS_HPP
