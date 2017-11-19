@@ -36,8 +36,9 @@ class Arm
         Arm();
         Arm(ros::NodeHandle handle, bool arm_side); 
         void update_current_joint_positions(const sensor_msgs::JointStateConstPtr& msg);
-        bool is_positioned();
+	void move_to(baxter_core_msgs::JointCommand new_order);
         void send_home(); 
+        bool is_positioned();
         bool is_done;
 };
 

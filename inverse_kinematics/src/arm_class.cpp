@@ -61,12 +61,19 @@ bool Arm::is_positioned()
         }
     }
 
-    //ROS_INFO("arm positioned...");
     return true;
+}
+
+void Arm::move_to(baxter_core_msgs::JointCommand new_order) 
+{
+    this->is_done = false;
+    this->orders = new_order;
 }
 
 void Arm::send_home() 
 {
+    this->is_done = false;
+
     baxter_core_msgs::JointCommand msg;
     msg.mode = baxter_core_msgs::JointCommand::POSITION_MODE;
 
