@@ -11,7 +11,7 @@
 #include "arm_class.hpp"
 #include "iks_class.hpp"
 
-enum State {INITIALIZING, FIND_CUBE};
+enum State {INITIALIZING, FIND_CUBE, DONE};
 
 int main(int argc, char **argv)
 {
@@ -22,7 +22,7 @@ int main(int argc, char **argv)
     // create a left and right arm, and an iks
     Arm left_arm(nh, LEFT);
     Arm right_arm(nh, RIGHT);
-    IKS ik_solver(nh);
+    IKS ik_solver(nh, RIGHT);
 
     // set loop rate, spin once
     ros::Rate loop_rate(10);
@@ -31,39 +31,43 @@ int main(int argc, char **argv)
     // main program content
     State state = INITIALIZING;
     ROS_INFO("INITIALIZING COMPLETE...");
-    while (ros::ok()) 
+    while (ros::ok() && state != DONE) 
     {
         switch (state) 
         {
             case INITIALIZING:
                 
-		// send the arms to their starting positions
-		left_arm.send_home();
+		        // send the arms to their starting positions
+		        left_arm.send_home();
                 right_arm.send_home();
                 
-		// move to the next stage
+		        // move to the next stage
                 if (left_arm.is_done && right_arm.is_done) 
                 {
+           	        ROS_INFO("INITIALIZING COMPLETE...");
                     state = FIND_CUBE;
-               	    ROS_INFO("INITIALIZING COMPLETE...");
                 }
 
                 break;
 
             case FIND_CUBE:
-    		
-		// find the cube, get the iks for it
-		baxter_core_msgs::JointCommand over_cube = ik_solver.get_solved_state();
-		right_arm.move_to(over_cube);
+ 
+                // falsify the arms
+                left_arm.is_done = false;
+                right_arm.is_done = false;
+   		   
+                // find the cube, get the iks for it
+                baxter_core_msgs::JointCommand over_cube = ik_solver.get_orders();
+                right_arm.move_to(over_cube);
 
-		// move to the next stage
-		if (left_arm.is_done && right_arm.is_done)
-		{
-		    state = INITIALIZE;
-		    ROS_INFO("CUBE FOUND...");
-		}
-
-	        break;
+		        // move to the next stage
+                if (left_arm.is_done && right_arm.is_done) 
+                {
+		            ROS_INFO("CUBE FOUND...");
+                    state = DONE;
+                }
+                
+	            break;
         }
 
         // spin & sleep
@@ -71,6 +75,7 @@ int main(int argc, char **argv)
         loop_rate.sleep();
     }
 
+    ROS_INFO("DONE...");
     return 0;
 }
 

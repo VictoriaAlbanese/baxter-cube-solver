@@ -13,8 +13,9 @@
 
 Arm::Arm() 
 {
-    this->arm_side = RIGHT;
+    this->is_initialized = false;
     this->is_done = false;
+    this->arm_side = RIGHT;
 }
 
 Arm::Arm(ros::NodeHandle handle, bool arm_side)
@@ -23,8 +24,9 @@ Arm::Arm(ros::NodeHandle handle, bool arm_side)
     if (arm_side == LEFT) pub_topic = "/robot/limb/left/joint_command";
     else pub_topic = "/robot/limb/right/joint_command";
     
-    this->arm_side = arm_side; 
+    this->is_initialized = false;
     this->is_done = false;
+    this->arm_side = arm_side; 
     this->pub = handle.advertise<baxter_core_msgs::JointCommand>(pub_topic, 10);
     this->sub = handle.subscribe<sensor_msgs::JointState>("/robot/joint_states", 10, &Arm::update_current_joint_positions, this);
 }
@@ -46,8 +48,12 @@ void Arm::update_current_joint_positions(const sensor_msgs::JointStateConstPtr& 
     // if the robot is in the correct position, 
     // we can stop publishing commands to move
     // otherwise, keep on publishing
-    if (this->is_positioned()) this->is_done = true;
-    else this->pub.publish(this->orders);
+    if (this->is_initialized == true && this->is_positioned()) this->is_done = true;
+    else 
+    {
+        this->is_done = false;
+        this->pub.publish(this->orders);
+    }
 }
 
 bool Arm::is_positioned() 
@@ -56,23 +62,23 @@ bool Arm::is_positioned()
     {
         if (fabs(this->orders.command[i] - this->current_joint_positions[i]) > 0.01) 
         {
-            //ROS_INFO("moving %s from [%f] to [%f]", orders.names[i].c_str(), this->current_joint_positions[i], this->orders.command[i]);
+            ROS_INFO("moving %s from [%f] to [%f]", orders.names[i].c_str(), this->current_joint_positions[i], this->orders.command[i]);
             return false;
         }
     }
 
+    ROS_INFO("Repositioned...");
     return true;
 }
 
 void Arm::move_to(baxter_core_msgs::JointCommand new_order) 
 {
-    this->is_done = false;
     this->orders = new_order;
 }
 
 void Arm::send_home() 
 {
-    this->is_done = false;
+    this->is_initialized = true;
 
     baxter_core_msgs::JointCommand msg;
     msg.mode = baxter_core_msgs::JointCommand::POSITION_MODE;

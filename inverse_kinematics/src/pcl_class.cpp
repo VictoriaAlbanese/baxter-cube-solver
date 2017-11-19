@@ -14,12 +14,14 @@
 // creates a default cloud
 Cloud::Cloud() 
 {
+    this->is_done = false;
 }
 
 // Constructor
 // creates a cloud with set publishers and subscribers
 Cloud::Cloud(ros::NodeHandle handle) 
 {
+    this->is_done = false;
     this->point_pub = handle.advertise<geometry_msgs::Point>("highest_point", 10);
     this->cloud_pub = handle.advertise<sensor_msgs::PointCloud2>("filtered_cloud", 10);
 	this->cloud_sub = handle.subscribe("camera/depth/points", 1, &Cloud::callback, this);
@@ -37,6 +39,8 @@ void Cloud::callback(const sensor_msgs::PointCloud2ConstPtr& msg)
 
     this->cloud_pub.publish(this->cloud);
     this->publish_point();
+        
+    this->cloud_sub.shutdown();
 }
 
 // Publish Point

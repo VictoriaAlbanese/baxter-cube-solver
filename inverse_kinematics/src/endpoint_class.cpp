@@ -30,6 +30,12 @@ void Endpoint::callback(const geometry_msgs::Point::ConstPtr& msg)
 {
     this->initialized = true;
     this->point = *msg;
+    this->sub.shutdown();
+}
+
+void Endpoint::kill_subscriber() 
+{
+    this->sub.shutdown();
 }
 
 //////////////////////////////////////////////////////////////

@@ -34,6 +34,7 @@
 class Cloud 
 {
     private: 
+        bool is_done;
         sensor_msgs::PointCloud2 cloud;
         geometry_msgs::Point highest_point;
         ros::Publisher point_pub;
