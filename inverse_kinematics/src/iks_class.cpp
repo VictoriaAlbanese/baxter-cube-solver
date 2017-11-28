@@ -138,7 +138,7 @@ geometry_msgs::PoseStamped IKS::get_pose()
     geometry_msgs::Point new_point;
     new_point.x = this->point.get_point().x; 
     new_point.y = this->point.get_point().y;
-    new_point.z = 0.1;
+    new_point.z = 0.10;
       
     // Make the pose for the pose_stamped
     geometry_msgs::Pose pose;
