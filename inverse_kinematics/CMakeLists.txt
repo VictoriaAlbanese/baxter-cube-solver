@@ -129,14 +129,23 @@ include_directories(
 add_executable(master src/master_node.cpp src/arm_class.cpp src/iks_class.cpp src/endpoint_class.cpp)
 target_link_libraries(master ${catkin_LIBRARIES})
 add_dependencies(master ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+<<<<<<< HEAD
+=======
+# add_dependencies(master inverse_kinematics_gencpp)
+>>>>>>> 396825991edfef1f2fb9f334c12c1182cec73f8a
 
 add_executable(pcl_node src/pcl_node.cpp src/pcl_class.cpp)
 target_link_libraries(pcl_node ${catkin_LIBRARIES})
 add_dependencies(pcl_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+<<<<<<< HEAD
+=======
+# add_dependencies(pcl_node inverse_kinematics_gencpp)
+>>>>>>> 396825991edfef1f2fb9f334c12c1182cec73f8a
 
 add_executable(ik_client_node src/ik_client_node.cpp src/endpoint_class.cpp)
 target_link_libraries(ik_client_node ${catkin_LIBRARIES})
 add_dependencies(ik_client_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+<<<<<<< HEAD
 
 add_executable(find_square src/image_converter.cpp)
 target_link_libraries(find_square ${catkin_LIBRARIES} ${OpenCV_LIBS})
@@ -149,6 +158,9 @@ add_dependencies(canny ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TAR
 add_executable(opencv src/opencv_shapes.cpp)
 target_link_libraries(opencv ${catkin_LIBRARIES} ${OpenCV_LIBS})
 add_dependencies(opencv ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+=======
+# add_dependencies(ik_client_node inverse_kinematics_gencpp)
+>>>>>>> 396825991edfef1f2fb9f334c12c1182cec73f8a
 
 ## Declare a C++ library
 # add_library(inverse_kinematics
