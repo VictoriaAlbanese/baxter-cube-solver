@@ -22,7 +22,7 @@ int main(int argc, char **argv)
     // create a left and right arm, and an iks
     Arm left_arm(nh, LEFT);
     Arm right_arm(nh, RIGHT);
-    IKS ik_solver(nh, RIGHT);
+    IKS ik_solver(nh);
 
     // set loop rate, spin once
     ros::Rate loop_rate(10);

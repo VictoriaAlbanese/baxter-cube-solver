@@ -1,16 +1,22 @@
-////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////
 //
 // Programmer: Victoria Albanese
-// Date: October 11, 2017
 // Filename: arm_class.cpp
 //
-// Description: This creates a class where properties of the 
-// arm can be set by the arm subscriber's callback 
+// Description: Implements a class where positions and
+// properties of the joints of baxter's arms can be set 
+// and manipulated 
 //
 //////////////////////////////////////////////////////////////
 
 #include "arm_class.hpp"
 
+//////////////////////////////////////////////////////////////
+
+// Public Class Functions
+
+// DEFAULT CONSTRUCTOR
+// creates a right arm by default, no ros setup
 Arm::Arm() 
 {
     this->is_initialized = false;
@@ -18,6 +24,8 @@ Arm::Arm()
     this->arm_side = RIGHT;
 }
 
+// CONSTRUCTOR
+// creates an arm of the specified side, does the ros setup
 Arm::Arm(ros::NodeHandle handle, bool arm_side)
 {
     string pub_topic;
@@ -28,54 +36,19 @@ Arm::Arm(ros::NodeHandle handle, bool arm_side)
     this->is_done = false;
     this->arm_side = arm_side; 
     this->pub = handle.advertise<baxter_core_msgs::JointCommand>(pub_topic, 10);
-    this->sub = handle.subscribe<sensor_msgs::JointState>("/robot/joint_states", 10, &Arm::update_current_joint_positions, this);
+    this->sub = handle.subscribe<sensor_msgs::JointState>("/robot/joint_states", 10, &Arm::joint_callback, this);
 }
 
-void Arm::update_current_joint_positions(const sensor_msgs::JointStateConstPtr& msg) 
-{
-    // clear the current vector
-    this->current_joint_positions.clear();
-    
-    // update it with the new arm positions
-    for (size_t i = 0; i < msg->position.size(); i++)
-    {
-        if (msg->name[i].find((arm_side == LEFT ? "left" : "right")) != std::string::npos)
-        {   
-            this->current_joint_positions.push_back(msg->position[i]);
-        }   
-    }
-
-    // if the robot is in the correct position, 
-    // we can stop publishing commands to move
-    // otherwise, keep on publishing
-    if (this->is_initialized == true && this->is_positioned()) this->is_done = true;
-    else 
-    {
-        this->is_done = false;
-        this->pub.publish(this->orders);
-    }
-}
-
-bool Arm::is_positioned() 
-{
-    for(size_t i = 0; i < this->orders.command.size(); i++)
-    {
-        if (fabs(this->orders.command[i] - this->current_joint_positions[i]) > 0.01) 
-        {
-            ROS_INFO("moving %s from [%f] to [%f]", orders.names[i].c_str(), this->current_joint_positions[i], this->orders.command[i]);
-            return false;
-        }
-    }
-
-    ROS_INFO("Repositioned...");
-    return true;
-}
-
+// MOVE TO FUNCTION
+// sets a new order for baxter's arms to move to
 void Arm::move_to(baxter_core_msgs::JointCommand new_order) 
 {
-    this->orders = new_order;
+	this->orders = new_order; 
 }
 
+// SEND HOME FUNCTION
+// moves the arms to a hardcoded position
+// that is outside the view of the point cloud
 void Arm::send_home() 
 {
     this->is_initialized = true;
@@ -124,6 +97,54 @@ void Arm::send_home()
     }
 
     this->orders = msg;
+}
+
+//////////////////////////////////////////////////////////////
+
+// Private Helper Functions & Callback
+
+// JOINT CALLBACK FUNCTION
+// updates the current positions of the joints; if not 
+// positioned in accordance with orders, publish joint commands
+void Arm::joint_callback(const sensor_msgs::JointStateConstPtr& msg) 
+{
+    this->current_joint_positions.clear();
+    
+    for (size_t i = 0; i < msg->position.size(); i++)
+    {
+        if (msg->name[i].find((arm_side == LEFT ? "left" : "right")) != std::string::npos)
+        {   
+            this->current_joint_positions.push_back(msg->position[i]);
+        }   
+    }
+
+    if (this->is_initialized == true && this->is_positioned()) this->is_done = true;
+    else 
+    {
+        this->is_done = false;
+        this->pub.publish(this->orders);
+    }
+}
+
+// IS POSITIONED FUNCTION
+// checks to see if the arm is positioned in 
+// accordance with the current orders or not
+bool Arm::is_positioned() 
+{
+    for(size_t i = 0; i < this->orders.command.size(); i++)
+    {
+        if (fabs(this->orders.command[i] - this->current_joint_positions[i]) > 0.01) 
+        {
+            //ROS_INFO("moving %s from [%f] to [%f]", 
+            //			orders.names[i].c_str(), 
+            //			this->current_joint_positions[i], 
+            //			this->orders.command[i]);
+            return false;
+        }
+    }
+
+    //ROS_INFO("Repositioned...");
+    return true;
 }
 
 //////////////////////////////////////////////////////////////
