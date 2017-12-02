@@ -50,7 +50,7 @@ class IKS
 		IKS();
 		IKS(ros::NodeHandle handle, bool arm_side);
         sensor_msgs::JointState get_solved_state() { return this->solved_state; };
-        baxter_core_msgs::JointCommand get_orders() { return this->orders; };
+        baxter_core_msgs::JointCommand get_orders();
         void iks_to_joint_command();
 		void get_iks();
 		void make_service_request(); 

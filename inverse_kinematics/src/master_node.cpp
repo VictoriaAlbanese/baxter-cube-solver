@@ -30,7 +30,7 @@ int main(int argc, char **argv)
 
     // main program content
     State state = INITIALIZING;
-    ROS_INFO("INITIALIZING COMPLETE...");
+    ROS_INFO("INITIALIZING...");
     while (ros::ok() && state != DONE) 
     {
         switch (state) 
@@ -57,13 +57,16 @@ int main(int argc, char **argv)
                 right_arm.is_done = false;
    		   
                 // find the cube, get the iks for it
+                ROS_INFO("LOOKING FOR CUBE...");
                 baxter_core_msgs::JointCommand over_cube = ik_solver.get_orders();
+                ROS_INFO("CUBE FOUND...");
+                ROS_INFO("REACHING FOR CUBE...");
                 right_arm.move_to(over_cube);
 
 		        // move to the next stage
                 if (left_arm.is_done && right_arm.is_done) 
                 {
-		            ROS_INFO("CUBE FOUND...");
+		            ROS_INFO("HOVERING OVER CUBE...");
                     state = DONE;
                 }
                 

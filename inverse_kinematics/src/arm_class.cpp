@@ -29,6 +29,7 @@ Arm::Arm(ros::NodeHandle handle, bool arm_side)
     this->arm_side = arm_side; 
     this->pub = handle.advertise<baxter_core_msgs::JointCommand>(pub_topic, 10);
     this->sub = handle.subscribe<sensor_msgs::JointState>("/robot/joint_states", 10, &Arm::update_current_joint_positions, this);
+    ros::spinOnce();
 }
 
 void Arm::update_current_joint_positions(const sensor_msgs::JointStateConstPtr& msg) 
@@ -62,12 +63,12 @@ bool Arm::is_positioned()
     {
         if (fabs(this->orders.command[i] - this->current_joint_positions[i]) > 0.01) 
         {
-            ROS_INFO("moving %s from [%f] to [%f]", orders.names[i].c_str(), this->current_joint_positions[i], this->orders.command[i]);
+            //ROS_INFO("moving %s from [%f] to [%f]", orders.names[i].c_str(), this->current_joint_positions[i], this->orders.command[i]);
             return false;
         }
     }
 
-    ROS_INFO("Repositioned...");
+    //ROS_INFO("Repositioned...");
     return true;
 }
 

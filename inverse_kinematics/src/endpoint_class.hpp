@@ -26,7 +26,6 @@ class Endpoint
         Endpoint(ros::NodeHandle handle); 
         bool is_initialized() { return this->initialized; }
         geometry_msgs::Point get_point() { return this->point; }
-        void kill_subscriber();
         void callback(const geometry_msgs::Point::ConstPtr& msg);
 };
 

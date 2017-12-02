@@ -67,20 +67,6 @@ void Cloud::set_highest_point()
         ros::Duration(1.0).sleep();
     }
 
-    //sensor_msgs::PointCloud2 new_cloud;
-    //ROS_INFO("point frame: %s", this->cloud.header.frame_id.c_str());	
-    //pcl_ros::transformPointCloud("/base", transform, this->cloud, new_cloud);
-    //ROS_INFO("transformed: %s", new_cloud.header.frame_id.c_str());	
-    
-	//point_cloud = rotate_points(point_cloud, -0.94);
-    /*sensor_msgs::PointCloud old_cloud;
-    sensor_msgs::PointCloud new_cloud;
-    sensor_msgs::convertPointCloud2ToPointCloud(this->cloud, old_cloud);
-    this->listener.waitForTransform("/camera_depth_optical_frame", "/base", old_cloud.header.stamp, ros::Duration(2.0));
-    this->listener.transformPointCloud("/base", old_cloud, new_cloud);
-    sensor_msgs::convertPointCloudToPointCloud2(old_cloud, this->cloud);
-    */
-    
     // Convert the sensor_msgs::PointCloud2 to the pcl::PointCloud<pclPointXYZ type>
 	pcl::PointCloud<pcl::PointXYZ> point_cloud;
 	pcl::fromROSMsg(this->cloud, point_cloud);
