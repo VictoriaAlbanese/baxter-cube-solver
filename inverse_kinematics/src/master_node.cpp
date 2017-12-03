@@ -11,7 +11,7 @@
 #include "arm_class.hpp"
 #include "iks_class.hpp"
 
-enum State {INITIALIZING, FIND_CUBE, DONE};
+enum State {OVER_CUBE, DONE};
 
 int main(int argc, char **argv)
 {
@@ -19,54 +19,40 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "master_node");
     ros::NodeHandle nh;
 
-    // create a left and right arm, and an iks
+    // create, initialize, and move left 
+    // and right arms to a starting position
+    ROS_INFO("INITIALIZING ARMS...");
     Arm left_arm(nh, LEFT);
     Arm right_arm(nh, RIGHT);
+    ROS_INFO("ARMS INITIALIZED...");
+    
+    // create an imverse kinematic solver
+    // and wait for a location to be published
+    ROS_INFO("LOOKING FOR CUBE...");
     IKS ik_solver(nh, RIGHT);
+    ROS_INFO("CUBE FOUND...");
 
     // set loop rate, spin once
     ros::Rate loop_rate(10);
     ros::spinOnce();
 
     // main program content
-    State state = INITIALIZING;
-    ROS_INFO("INITIALIZING...");
+    State state = OVER_CUBE;
+    ROS_INFO("MOVING ARM OVER CUBE...");
     while (ros::ok() && state != DONE) 
     {
         switch (state) 
         {
-            case INITIALIZING:
-                
-		        // send the arms to their starting positions
-		        left_arm.send_home();
-                right_arm.send_home();
-                
-		        // move to the next stage
-                if (left_arm.is_done && right_arm.is_done) 
-                {
-           	        ROS_INFO("INITIALIZING COMPLETE...");
-                    state = FIND_CUBE;
-                }
-
-                break;
-
-            case FIND_CUBE:
- 
-                // falsify the arms
-                left_arm.is_done = false;
-                right_arm.is_done = false;
-   		   
+            case OVER_CUBE:
+   
                 // find the cube, get the iks for it
-                ROS_INFO("LOOKING FOR CUBE...");
                 baxter_core_msgs::JointCommand over_cube = ik_solver.get_orders();
-                ROS_INFO("CUBE FOUND...");
-                ROS_INFO("REACHING FOR CUBE...");
                 right_arm.move_to(over_cube);
 
 		        // move to the next stage
-                if (left_arm.is_done && right_arm.is_done) 
+                if (left_arm.done && right_arm.done) 
                 {
-		            ROS_INFO("HOVERING OVER CUBE...");
+		            ROS_INFO("ARM OVER CUBE...");
                     state = DONE;
                 }
                 

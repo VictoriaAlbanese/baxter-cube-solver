@@ -1,43 +1,91 @@
-////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////
 //
 // Programmer: Victoria Albanese
-// Date: October 11, 2017
 // Filename: arm_class.cpp
 //
-// Description: This creates a class where properties of the 
-// arm can be set by the arm subscriber's callback 
+// Description: Declares a class where positions of baxter's
+// arm joints can be manipulated 
 //
 //////////////////////////////////////////////////////////////
 
 #include "arm_class.hpp"
 
+//////////////////////////////////////////////////////////////
+
+// Public Member Functions
+
+// DEFAULT CONSTRUCTOR
+// does not initialize ros or the object
+// makes a right arm by default because why not
 Arm::Arm() 
 {
-    this->is_initialized = false;
-    this->is_done = false;
+    this->initialized = false;
+    this->ready = false;
+    this->done = false;
+    
     this->arm_side = RIGHT;
 }
 
+// CONSTRUCTOR
+// initializes ros, and the object by 
+// waiting for the joint callback to be called
 Arm::Arm(ros::NodeHandle handle, bool arm_side)
 {
+    this->initialized = false;
+    this->ready = false;
+    this->done = false;
+
     string pub_topic;
     if (arm_side == LEFT) pub_topic = "/robot/limb/left/joint_command";
     else pub_topic = "/robot/limb/right/joint_command";
     
-    this->is_initialized = false;
-    this->is_done = false;
     this->arm_side = arm_side; 
     this->pub = handle.advertise<baxter_core_msgs::JointCommand>(pub_topic, 10);
-    this->sub = handle.subscribe<sensor_msgs::JointState>("/robot/joint_states", 10, &Arm::update_current_joint_positions, this);
-    ros::spinOnce();
+    this->sub = handle.subscribe<sensor_msgs::JointState>("/robot/joint_states", 10, &Arm::joint_callback, this);
+    
+    while (!this->initialized) ros::spinOnce();
+
+    this->send_home();
 }
 
-void Arm::update_current_joint_positions(const sensor_msgs::JointStateConstPtr& msg) 
+// MOVE TO FUNCTION
+// sets new orders
+// this causes baxter's arms to move
+void Arm::move_to(baxter_core_msgs::JointCommand new_order) 
 {
-    // clear the current vector
+    this->ready = true;
+    this->done = false;
+    this->execute_orders(new_order);
+}
+
+// TURN WRIST FUNCTION
+// turns baxter's wrist joint to change the orientation
+// of the grippers by a certain given offset 
+void Arm::turn_wrist(float offset) 
+{
+    baxter_core_msgs::JointCommand msg;
+    msg.mode = baxter_core_msgs::JointCommand::POSITION_MODE;
+
+    msg.names.push_back((arm_side == LEFT ? "left_w2" : "right_w2"));
+
+    msg.command.resize(msg.names.size());
+    msg.command[0] = this->current_joint_positions[6] + offset;
+
+    this->execute_orders(msg);
+}
+
+//////////////////////////////////////////////////////////////
+
+// Private Helper Functions & Callbacks
+
+// JOINT CALLBACK FUNCTION
+// updates the current positions of the joints
+// if not in accordance with the orders, publish commands
+void Arm::joint_callback(const sensor_msgs::JointStateConstPtr& msg) 
+{
+    this->initialized = true;
+
     this->current_joint_positions.clear();
-    
-    // update it with the new arm positions
     for (size_t i = 0; i < msg->position.size(); i++)
     {
         if (msg->name[i].find((arm_side == LEFT ? "left" : "right")) != std::string::npos)
@@ -46,17 +94,33 @@ void Arm::update_current_joint_positions(const sensor_msgs::JointStateConstPtr& 
         }   
     }
 
-    // if the robot is in the correct position, 
-    // we can stop publishing commands to move
-    // otherwise, keep on publishing
-    if (this->is_initialized == true && this->is_positioned()) this->is_done = true;
-    else 
+    if (this->ready && !this->is_positioned()) 
     {
-        this->is_done = false;
+        ROS_INFO("repositioning");
+        this->done = false;
         this->pub.publish(this->orders);
+    }
+
+    else if (this->ready && this->is_positioned()) 
+    {
+        ROS_INFO("positioned");
+        this->done = true;
+        this->ready = false;
     }
 }
 
+// EXECUTE ORDERS
+// sets new orders for the joints, and waits for 
+// those orders to be completed before continuing
+void Arm::execute_orders(baxter_core_msgs::JointCommand new_orders) 
+{
+    this->orders = new_orders;
+    while (!this->done) ros::spinOnce();
+}
+
+// IS POSITIONED FUNCTION
+// checks to see if the current positions of the joints
+// is in accordance with the orders
 bool Arm::is_positioned() 
 {
     for(size_t i = 0; i < this->orders.command.size(); i++)
@@ -72,15 +136,13 @@ bool Arm::is_positioned()
     return true;
 }
 
-void Arm::move_to(baxter_core_msgs::JointCommand new_order) 
-{
-    this->orders = new_order;
-}
-
+// SEND HOME
+// moves baxter's arms to a hard coded position
+// outside the view of the point cloud
 void Arm::send_home() 
 {
-    this->is_initialized = true;
-
+   this->ready = true;
+    
     baxter_core_msgs::JointCommand msg;
     msg.mode = baxter_core_msgs::JointCommand::POSITION_MODE;
 
@@ -124,7 +186,7 @@ void Arm::send_home()
         msg.command[6] = 0.0; 
     }
 
-    this->orders = msg;
+    this->execute_orders(msg);
 }
 
 //////////////////////////////////////////////////////////////

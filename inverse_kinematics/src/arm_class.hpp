@@ -3,8 +3,8 @@
 // Programmer: Victoria Albanese
 // Filename: arm_class.hpp
 //
-// Description: This declares a class which represents 
-// Baxter's left and right arms 
+// Description: Declares a class where positions of baxter's
+// arm joints can be manipulated 
 //
 //////////////////////////////////////////////////////////////
 
@@ -26,21 +26,32 @@ using std::vector;
 class Arm
 {
     private: 
+        
+        // members
         bool arm_side;
         baxter_core_msgs::JointCommand orders;
         vector<double> current_joint_positions;
         ros::Publisher pub;
         ros::Subscriber sub;
 
+        // functions
+        void joint_callback(const sensor_msgs::JointStateConstPtr& msg);
+        void execute_orders(baxter_core_msgs::JointCommand new_orders);
+        bool is_positioned();
+        void send_home(); 
+
     public:
+
+        // members
+        bool initialized;
+        bool ready;
+        bool done;
+       
+        // functions
         Arm();
         Arm(ros::NodeHandle handle, bool arm_side); 
-        void update_current_joint_positions(const sensor_msgs::JointStateConstPtr& msg);
 	    void move_to(baxter_core_msgs::JointCommand new_order);
-        void send_home(); 
-        bool is_positioned();
-        bool is_initialized;
-        bool is_done;
+        void turn_wrist(float offset);
 };
 
 #endif // ARM_CLASS_HPP

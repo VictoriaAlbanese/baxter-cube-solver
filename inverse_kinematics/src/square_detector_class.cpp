@@ -15,10 +15,24 @@
 // Subscribes to input video feed and publish output video feed
 SquareDetector::SquareDetector() : it(nh)
 {
+    this->initialized = false;
     namedWindow(WINDOW_NAME);
     this->pub = it.advertise("/image_converter/output_video", 1);
     this->sub = it.subscribe("/cameras/right_hand_camera/image", 1, &SquareDetector::callback, this);
-    ros::spinOnce();
+
+    while (!this->initialized) ros::spinOnce();
+}
+
+// CONSTRUCTOR
+// Subscribes to input video feed and publish output video feed
+SquareDetector::SquareDetector(ros::NodeHandle handle) : it(handle)
+{
+    this->initialized = false;
+    namedWindow(WINDOW_NAME);
+    this->pub = it.advertise("/image_converter/output_video", 1);
+    this->sub = it.subscribe("/cameras/right_hand_camera/image", 1, &SquareDetector::callback, this);
+    
+    while (!this->initialized) ros::spinOnce();
 }
 
 // DESTRUCTOR
@@ -33,6 +47,8 @@ SquareDetector::~SquareDetector()
 // Does a bunch of work detecting and drawing squares etc.
 void SquareDetector::callback(const sensor_msgs::ImageConstPtr& msg)
 {
+    this->initialized = true;
+
     // Try and get the image from the ros topic
     cv_bridge::CvImagePtr cv_ptr;
     try
@@ -156,14 +172,11 @@ void SquareDetector::draw_squares(Mat& image)
         for (int j = 0; j < 4; j++) 
         {
             //ROS_INFO("Corner %d (%d, %d)", j, this->squares[i][j].x, this->squares[i][j].y);
-            circle(image, this->squares[i][j], 10, CV_RGB(0,0,255), -1);
+            circle(image, this->squares[i][j], 3 * (j + 1), CV_RGB(0,0,255), -1);
         }    
 
         Point centroid = this->get_centroid(this->squares[i]);
         circle(image, centroid, 10, CV_RGB(0,255,0), -1);
-
-        float offset = this->get_angular_offset(this->squares[i]);
-        ROS_INFO("Angular Offset: [%f rad] or [%f] degrees", offset, offset * 180 / M_PI);
     }
         
     imshow(WINDOW_NAME, image);
@@ -189,13 +202,26 @@ Point SquareDetector::get_centroid(vector<Point> square)
 
 // GET ANGULAR OFFSET FUNCTION
 // gets the angle that the cube is rotated
-// --------baseline position tbd -------------
-float SquareDetector::get_angular_offset(vector<Point> square) 
+float SquareDetector::get_angular_offset() 
 {
-    float dx = square[2].x - square[0].x;
-    float dy = square[2].y - square[0].y;
+    float dx = this->squares[0][2].x - this->squares[0][0].x;
+    float dy = this->squares[0][2].y - this->squares[0][0].y;
     
     return asin(dx / dy);
 }
+/*
+// GET X OFFSET FUNCTION
+// gets the offset in x of the cube's current position from its desired position
+float SquareDetector::get_x_offset(Point centroid) 
+{
+    return centroid.x - X_DESIRED;
+}
 
+// GET Y OFFSET FUNCTION
+// gets the offset in y of the cube's current position from its desired position
+float SquareDetector::get_y_offset() 
+{
+    return centroid.y - Y_DESIRED;
+}
+*/
 ////////////////////////////////////////////////////////////////

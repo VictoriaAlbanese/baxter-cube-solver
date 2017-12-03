@@ -38,13 +38,17 @@ class SquareDetector
 
     public:
         SquareDetector();
+        SquareDetector(ros::NodeHandle handle);
         ~SquareDetector();
         void callback(const sensor_msgs::ImageConstPtr& msg);
         void find_squares(Mat& image);
         void draw_squares(Mat& image);
         double angle(Point pt1, Point pt2, Point pt0);
-        float get_angular_offset(vector<Point> square);
+        float get_angular_offset();
         Point get_centroid(vector<Point> square);
+        //float get_x_offset(Point centroid);
+        //float get_y_offset(Point centroid);
+        bool initialized;
 };
 
 #endif // SQUARE_DETECTOR_CLASS_HPP

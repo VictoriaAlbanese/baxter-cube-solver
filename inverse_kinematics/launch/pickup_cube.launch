@@ -2,6 +2,6 @@
 
     <node name="master" pkg="inverse_kinematics" type="master" output="screen"/>
     <node name="pcl_node" pkg="inverse_kinematics" type="pcl_node" output="screen"/>
-    <node name="square_detector_node" pkg="inverse_kinematics" type="find_square" output="screen"/>
+    <!--<node name="square_detector_node" pkg="inverse_kinematics" type="find_square" output="screen"/>-->
 
 </launch>
