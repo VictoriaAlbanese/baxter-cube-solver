@@ -10,8 +10,9 @@
 #include "ros/ros.h"
 #include "arm_class.hpp"
 #include "iks_class.hpp"
+#include "square_detector_class.hpp"
 
-enum State {OVER_CUBE, DONE};
+enum State {OVER_CUBE, FIX_ORIENTATION, DONE};
 
 int main(int argc, char **argv)
 {
@@ -32,31 +33,54 @@ int main(int argc, char **argv)
     IKS ik_solver(nh, RIGHT);
     ROS_INFO("CUBE FOUND...");
 
+    // Make a square detector, and offset variable for later
+    SquareDetector detector(nh);
+    float offset;
+
     // set loop rate, spin once
     ros::Rate loop_rate(10);
     ros::spinOnce();
 
     // main program content
     State state = OVER_CUBE;
-    ROS_INFO("MOVING ARM OVER CUBE...");
     while (ros::ok() && state != DONE) 
     {
         switch (state) 
         {
             case OVER_CUBE:
-   
-                // find the cube, get the iks for it
-                baxter_core_msgs::JointCommand over_cube = ik_solver.get_orders();
-                right_arm.move_to(over_cube);
-
-		        // move to the next stage
-                if (left_arm.done && right_arm.done) 
+ 
+                // use the iks to move over the cube
+                ROS_INFO("MOVING ARM OVER CUBE...");
+                right_arm.move_to(ik_solver.get_orders());
+ 
+		        // if we are hovering over the cube, move to the next stage
+                if (right_arm.done) 
                 {
 		            ROS_INFO("ARM OVER CUBE...");
-                    state = DONE;
+                    state = FIX_ORIENTATION;
                 }
                 
 	            break;
+
+            case FIX_ORIENTATION:
+                
+                // turn the wrist until cube is oriented correctly
+                ROS_INFO("FIXING ORIENTATION...");
+
+                while (fabs(offset * 180 / M_PI) < 55 || fabs(offset * 180 / M_PI) > 65)
+                {
+                    //ROS_INFO("FIXING ORIENTATION...");
+                    offset = detector.get_angular_offset();
+                    ROS_INFO("\toffset is [%f] rads or [%f] degs", offset, offset * 180 / M_PI);
+                    right_arm.turn_wrist(offset);
+                }
+
+                ROS_INFO("ORIENTATION FIXED...");
+                ros::Duration(5.0).sleep();
+                state = DONE;
+
+                break;
+
         }
 
         // spin & sleep

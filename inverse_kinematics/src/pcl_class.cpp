@@ -98,8 +98,8 @@ void Cloud::set_highest_point()
     this->listener.transformPoint("/base", p_in, p_out);
 
     // Set and print this point
+	//ROS_INFO("%d (%f, %f, %f)", index, p_out.point.x, p_out.point.y, p_out.point.z);
 	this->highest_point = p_out.point;
-	ROS_INFO("%d (%f, %f, %f)", index, this->highest_point.x, this->highest_point.y, this->highest_point.z);
 }
 
 // Statistical Outlier Removal Function

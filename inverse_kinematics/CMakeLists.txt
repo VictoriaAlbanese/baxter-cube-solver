@@ -122,11 +122,15 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 # include_directories(include)
-include_directories(
-  ${catkin_INCLUDE_DIRS}
-)
+include_directories( ${catkin_INCLUDE_DIRS})
 
-add_executable(master src/master_node.cpp src/arm_class.cpp src/iks_class.cpp src/endpoint_class.cpp)
+add_executable(master 
+    src/master_node.cpp 
+    src/arm_class.cpp 
+    src/iks_class.cpp 
+    src/endpoint_class.cpp
+    src/square_detector_class.cpp
+)
 target_link_libraries(master ${catkin_LIBRARIES})
 add_dependencies(master ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 

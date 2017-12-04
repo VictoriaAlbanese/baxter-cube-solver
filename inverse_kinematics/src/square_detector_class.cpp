@@ -16,6 +16,7 @@
 SquareDetector::SquareDetector() : it(nh)
 {
     this->initialized = false;
+
     namedWindow(WINDOW_NAME);
     this->pub = it.advertise("/image_converter/output_video", 1);
     this->sub = it.subscribe("/cameras/right_hand_camera/image", 1, &SquareDetector::callback, this);
@@ -28,6 +29,7 @@ SquareDetector::SquareDetector() : it(nh)
 SquareDetector::SquareDetector(ros::NodeHandle handle) : it(handle)
 {
     this->initialized = false;
+
     namedWindow(WINDOW_NAME);
     this->pub = it.advertise("/image_converter/output_video", 1);
     this->sub = it.subscribe("/cameras/right_hand_camera/image", 1, &SquareDetector::callback, this);
@@ -65,7 +67,7 @@ void SquareDetector::callback(const sensor_msgs::ImageConstPtr& msg)
 
     // Draw all the squares you can find on the video stream
     this->find_squares(cv_ptr->image);
-    this->draw_squares(cv_ptr->image);
+    if (squares.size() != 0) this->draw_squares(cv_ptr->image);
 
     // Draw a circle at the desired centroid of the square should be
     circle(cv_ptr->image, Point(X_DESIRED, Y_DESIRED), 5, CV_RGB(255,0,0));
@@ -204,6 +206,8 @@ Point SquareDetector::get_centroid(vector<Point> square)
 // gets the angle that the cube is rotated
 float SquareDetector::get_angular_offset() 
 {
+    while (this->squares.size() == 0) ros::spinOnce();
+
     float dx = this->squares[0][2].x - this->squares[0][0].x;
     float dy = this->squares[0][2].y - this->squares[0][0].y;
     

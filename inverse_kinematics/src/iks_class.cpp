@@ -41,7 +41,6 @@ IKS::IKS(ros::NodeHandle handle, bool arm_side)
 // then gets iks and returns orders to the arms to get there
 baxter_core_msgs::JointCommand IKS::get_orders() 
 {
-
     return this->orders;
 }
 
@@ -113,7 +112,11 @@ void IKS::get_iks()
         exit(1);
     }
 
-    ROS_INFO("IKS FOUND...");
+    ROS_INFO("\tinverse kinematic solution found");
+ 	ROS_INFO("\t(%f, %f, %f)", 
+	    this->point.get_point().x, 
+	    this->point.get_point().y, 
+	    this->point.get_point().z);
     this->solved_state = this->service.response.joints[0];
 }
 
@@ -123,10 +126,6 @@ void IKS::make_service_request()
 {
     // Get the pose setup
     geometry_msgs::PoseStamped pose = get_pose();
-	ROS_INFO("(%f, %f, %f)", 
-	this->point.get_point().x, 
-	this->point.get_point().y, 
-	this->point.get_point().z);
 
     // Make the service request
     this->service.request.pose_stamp.resize(1);

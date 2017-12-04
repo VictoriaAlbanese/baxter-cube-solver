@@ -44,7 +44,6 @@ Arm::Arm(ros::NodeHandle handle, bool arm_side)
     this->sub = handle.subscribe<sensor_msgs::JointState>("/robot/joint_states", 10, &Arm::joint_callback, this);
     
     while (!this->initialized) ros::spinOnce();
-
     this->send_home();
 }
 
@@ -53,23 +52,29 @@ Arm::Arm(ros::NodeHandle handle, bool arm_side)
 // this causes baxter's arms to move
 void Arm::move_to(baxter_core_msgs::JointCommand new_order) 
 {
-    this->ready = true;
-    this->done = false;
+    this->get_ready();
     this->execute_orders(new_order);
 }
 
 // TURN WRIST FUNCTION
 // turns baxter's wrist joint to change the orientation
-// of the grippers by a certain given offset 
+// of the grippers by a tiny bit in a direction given by the offset 
 void Arm::turn_wrist(float offset) 
 {
-    baxter_core_msgs::JointCommand msg;
-    msg.mode = baxter_core_msgs::JointCommand::POSITION_MODE;
+    this->get_ready();
+    
+    float increment = 0.01;
+    if (offset < 0) increment*= -1;
+                  
+    baxter_core_msgs::JointCommand msg = this->orders;
 
-    msg.names.push_back((arm_side == LEFT ? "left_w2" : "right_w2"));
-
-    msg.command.resize(msg.names.size());
-    msg.command[0] = this->current_joint_positions[6] + offset;
+    for (size_t i = 0; i < msg.names.size(); i++)
+    {
+        if (msg.names[i].find((arm_side == LEFT ? "left_w2" : "right_w2")) != std::string::npos)
+        {   
+            msg.command[i]+= increment;
+        }   
+    }
 
     this->execute_orders(msg);
 }
@@ -96,20 +101,28 @@ void Arm::joint_callback(const sensor_msgs::JointStateConstPtr& msg)
 
     if (this->ready && !this->is_positioned()) 
     {
-        ROS_INFO("repositioning");
         this->done = false;
         this->pub.publish(this->orders);
     }
 
     else if (this->ready && this->is_positioned()) 
     {
-        ROS_INFO("positioned");
+        ROS_INFO("\t%s arm positioned", (arm_side == LEFT ? "left" : "right"));
         this->done = true;
         this->ready = false;
     }
 }
 
-// EXECUTE ORDERS
+// GET READY FUNCTION
+// flips the necessary state bools of the arm
+// which will prepare the joints to make a movement
+void Arm::get_ready() 
+{
+    this->ready = true;
+    this->done = false;
+}
+
+// EXECUTE ORDERS FUNCTION
 // sets new orders for the joints, and waits for 
 // those orders to be completed before continuing
 void Arm::execute_orders(baxter_core_msgs::JointCommand new_orders) 
@@ -125,7 +138,7 @@ bool Arm::is_positioned()
 {
     for(size_t i = 0; i < this->orders.command.size(); i++)
     {
-        if (fabs(this->orders.command[i] - this->current_joint_positions[i]) > 0.01) 
+        if (fabs(this->orders.command[i] - this->current_joint_positions[i]) > 0.01 )
         {
             //ROS_INFO("moving %s from [%f] to [%f]", orders.names[i].c_str(), this->current_joint_positions[i], this->orders.command[i]);
             return false;

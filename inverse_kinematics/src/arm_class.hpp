@@ -33,20 +33,21 @@ class Arm
         vector<double> current_joint_positions;
         ros::Publisher pub;
         ros::Subscriber sub;
+        bool initialized;
+        bool ready;
 
         // functions
         void joint_callback(const sensor_msgs::JointStateConstPtr& msg);
         void execute_orders(baxter_core_msgs::JointCommand new_orders);
+        void get_ready();
         bool is_positioned();
         void send_home(); 
 
     public:
 
         // members
-        bool initialized;
-        bool ready;
         bool done;
-       
+
         // functions
         Arm();
         Arm(ros::NodeHandle handle, bool arm_side); 
