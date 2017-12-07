@@ -11,8 +11,13 @@
 
 #include "square_detector_class.hpp"
 
-// CONSTRUCTOR
-// Subscribes to input video feed and publish output video feed
+////////////////////////////////////////////////////////////////
+
+// Public Members
+
+// DEFAULT CONSTRUCTOR
+// does ros initialization; subscribes to input 
+// video feed and publishes output video feed
 SquareDetector::SquareDetector() : it(nh)
 {
     this->initialized = false;
@@ -25,7 +30,8 @@ SquareDetector::SquareDetector() : it(nh)
 }
 
 // CONSTRUCTOR
-// Subscribes to input video feed and publish output video feed
+// does ros initialization; subscribes to input 
+// video feed and publishes output video feed
 SquareDetector::SquareDetector(ros::NodeHandle handle) : it(handle)
 {
     this->initialized = false;
@@ -33,20 +39,24 @@ SquareDetector::SquareDetector(ros::NodeHandle handle) : it(handle)
     namedWindow(WINDOW_NAME);
     this->pub = it.advertise("/image_converter/output_video", 1);
     this->sub = it.subscribe("/cameras/right_hand_camera/image", 1, &SquareDetector::callback, this);
-    
+
     while (!this->initialized) ros::spinOnce();
 }
 
 // DESTRUCTOR
-// Destroys the window
+// destroys the window
 SquareDetector::~SquareDetector()
 {
     destroyWindow(WINDOW_NAME);
 }
 
+////////////////////////////////////////////////////////////////
+
+// Private Members & Callbacks
+
 // CALLBACK FUNCTION
-// Gets the ros image and turns it into an opencv image 
-// Does a bunch of work detecting and drawing squares etc.
+// gets the ros image and turns it into an opencv image 
+// detects and draws the squares, corners, centroids, etc
 void SquareDetector::callback(const sensor_msgs::ImageConstPtr& msg)
 {
     this->initialized = true;
@@ -81,7 +91,8 @@ void SquareDetector::callback(const sensor_msgs::ImageConstPtr& msg)
 }
 
 // ANGLE FUNCTION
-// Finds the cosine of angle between vectors from pt0->pt1 and from pt0->pt2
+// finds the cosine of angle between 
+// vectors from pt0->pt1 and from pt0->pt2
 double SquareDetector::angle(Point pt1, Point pt2, Point pt0)
 {
     double dx1 = pt1.x - pt0.x;

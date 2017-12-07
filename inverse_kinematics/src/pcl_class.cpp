@@ -10,52 +10,70 @@
 
 #include "pcl_class.hpp"
 
-// Default Constructor
-// creates a default cloud
+////////////////////////////////////////////////////////////////
+
+// Public Members
+
+// DEFAULT CONSTRUCTOR
+// does not do ros initialization
 Cloud::Cloud() 
 {
-    this->is_done = false;
+    this->initialized = false;
+    this->done = false;
 }
 
-// Constructor
-// creates a cloud with set publishers and subscribers
+// CONSTRUCTOR
+// does the ros initialization
 Cloud::Cloud(ros::NodeHandle handle) 
 {
-    this->is_done = false;
-    this->point_pub = handle.advertise<geometry_msgs::Point>("highest_point", 10);
+    this->initialized = false;
+    this->done = false;
+
+    this->point_pub = handle.advertise<geometry_msgs::Point>("goal_point", 10);
     this->cloud_pub = handle.advertise<sensor_msgs::PointCloud2>("filtered_cloud", 10);
-	this->cloud_sub = handle.subscribe("camera/depth/points", 1, &Cloud::callback, this);
+	this->cloud_sub = handle.subscribe("camera/depth/points", 1, &Cloud::cloud_callback, this);
+	this->kill_sub = handle.subscribe("kill_cloud", 1, &Cloud::kill_callback, this);
+
+    while (!this->initialized) ros::spinOnce();
 }
 
-// Callback
-// Filters the cloud and sets the highest point of the cloud
-void Cloud::callback(const sensor_msgs::PointCloud2ConstPtr& msg) 
+// GET REFINED CLOUD
+// removes outliers & performs a voxel filter 
+// on the cloud, then publishes the refined cloud
+void Cloud::get_refined_cloud() 
 {
-    this->cloud = *msg;
-
     this->remove_outliers();
     this->voxel_filter();
-    this->set_highest_point();
-
     this->cloud_pub.publish(this->cloud);
-    this->publish_point();
-        
-    this->cloud_sub.shutdown();
 }
 
-// Publish Point
-// publishes the highest point to a new topic
-void Cloud::publish_point() 
+////////////////////////////////////////////////////////////////
+
+// Private Members & Callbacks
+
+// CLOUD CALLBACK FUNCTION
+// gets the cloud as it's published
+// sets the highest point of the cloud
+void Cloud::cloud_callback(const sensor_msgs::PointCloud2ConstPtr& msg) 
 {
-    geometry_msgs::Point point;
-    point.x = this->highest_point.x;
-    point.y = this->highest_point.y;
-    point.z = this->highest_point.z;
-    this->point_pub.publish(point);
+    this->initialized = true;
+    this->cloud = *msg;
+    this->get_refined_cloud();
+    this->set_highest_point();
 }
 
-// Set Highest Poiunt Function
-// finds the highest point in the cloud
+// KILL CALLBACK FUNCTION
+// this function wits for the kill command to be published
+// to a certain topic; once it gets the signal, it will cause
+// the pcl_node to commit suicide, exiting gracefully
+void Cloud::kill_callback(const std_msgs::Bool& msg) 
+{
+    //ROS_INFO("Goodbye, cold cruel world... *dies*");
+    this->done = msg.data;
+}
+
+// SET HIGHEST POINT FUNCTION
+// finds the highest point in the cloud & publishes it
 void Cloud::set_highest_point() 
 {
     // Find the transformation between the point cloud and baxter
@@ -67,9 +85,9 @@ void Cloud::set_highest_point()
         ros::Duration(1.0).sleep();
     }
 
-    // Convert the sensor_msgs::PointCloud2 to the pcl::PointCloud<pclPointXYZ type>
-	pcl::PointCloud<pcl::PointXYZ> point_cloud;
-	pcl::fromROSMsg(this->cloud, point_cloud);
+    // Convert the sensor_msgs::PointCloud2 to the PointCloud<PointXYZ> type
+	PointCloud<PointXYZ> point_cloud;
+	fromROSMsg(this->cloud, point_cloud);
 
     // Rotate the points in the cloud
 	point_cloud = rotate_points(point_cloud, -0.94);
@@ -97,73 +115,72 @@ void Cloud::set_highest_point()
     p_in.point.z = point_cloud.points[index].z;
     this->listener.transformPoint("/base", p_in, p_out);
 
-    // Set and print this point
-	//ROS_INFO("%d (%f, %f, %f)", index, p_out.point.x, p_out.point.y, p_out.point.z);
+    // Set, print, & publish this point
+	ROS_INFO("%d (%f, %f, %f)", index, p_out.point.x, p_out.point.y, p_out.point.z);
 	this->highest_point = p_out.point;
+    geometry_msgs::Point point;
+    point.x = this->highest_point.x;
+    point.y = this->highest_point.y;
+    point.z = this->highest_point.z;
+    this->point_pub.publish(point);
+
 }
 
-// Statistical Outlier Removal Function
-// removes points with neighbors that arent sufficiently close
+// REMOVE OUTLIERS FUNCTION
+// removes points with neighbors that aren't 
+// sufficiently close statistically speaking
 void Cloud::remove_outliers() 
 {
-	// Mke containers for the existing and new clouds to go in
-	pcl::PCLPointCloud2* cloud = new pcl::PCLPointCloud2;
-	pcl::PCLPointCloud2ConstPtr cloud_ptr(cloud);
-	pcl::PCLPointCloud2 filtered_cloud;
+	PCLPointCloud2* cloud = new PCLPointCloud2;
+	PCLPointCloud2ConstPtr cloud_ptr(cloud);
+	PCLPointCloud2 filtered_cloud;
 
-	// Convert the sensor_msgs::PointCloud2 to a pcl::PointCloud2
 	pcl_conversions::toPCL(this->cloud, *cloud);
 
-	// Do the thing
-	pcl::StatisticalOutlierRemoval<pcl::PCLPointCloud2> sor;
+	StatisticalOutlierRemoval<PCLPointCloud2> sor;
   	sor.setInputCloud(cloud_ptr);
   	sor.setMeanK(10);
   	sor.setStddevMulThresh(1.0);
   	sor.filter(filtered_cloud);
 
-	// Convert back to sensor_msgs::PointCloud2 
 	sensor_msgs::PointCloud2 output_cloud;
 	pcl_conversions::moveFromPCL(filtered_cloud, output_cloud);
 
-	// Return the new, filtered, output cloud
 	this->cloud = output_cloud;
 }
 
-// Voxel Filter Function
-// downsamples point cloud to make #points more reasonable
+// VOXEL FILTER FUNCTION
+// downsamples point cloud to make the number 
+// of points that get published more reasonable
 void Cloud::voxel_filter() 
 {
-	// Mke containers for the existing and new clouds to go in
-	pcl::PCLPointCloud2* cloud = new pcl::PCLPointCloud2;
-	pcl::PCLPointCloud2ConstPtr cloud_ptr(cloud);
-	pcl::PCLPointCloud2 filtered_cloud;
+	PCLPointCloud2* cloud = new PCLPointCloud2;
+	PCLPointCloud2ConstPtr cloud_ptr(cloud);
+	PCLPointCloud2 filtered_cloud;
 
-	// Convert the sensor_msgs::PointCloud2 to a pcl::PointCloud2
 	pcl_conversions::toPCL(this->cloud, *cloud);
 
-	// Do the thing
-	pcl::VoxelGrid<pcl::PCLPointCloud2> sor;
+	VoxelGrid<PCLPointCloud2> sor;
 	sor.setInputCloud(cloud_ptr);
-	sor.setLeafSize(0.1, 0.1, 0.1);
+	sor.setLeafSize(0.1, 0.1, 0.1); // 10cm grid?
 	sor.filter(filtered_cloud);
 
-	// Convert back to sensor_msgs::PointCloud2 
 	sensor_msgs::PointCloud2 output_cloud;
 	pcl_conversions::moveFromPCL(filtered_cloud, output_cloud);
 
-	// Return the new, filtered, output cloud
 	this->cloud = output_cloud;
 }
 
-// Rotate Points Function
-// hacky way to transform the points without tf
-pcl::PointCloud<pcl::PointXYZ> Cloud::rotate_points(pcl::PointCloud<pcl::PointXYZ> old_cloud, float theta) 
+// ROTATE POINTS FUNCTION
+// hacky way to transform the points 
+// by a certain amount without the transform
+PointCloud<PointXYZ> Cloud::rotate_points(PointCloud<PointXYZ> old_cloud, float theta) 
 {
   	Eigen::Affine3f transform_2 = Eigen::Affine3f::Identity();
-  	transform_2.rotate (Eigen::AngleAxisf (theta, Eigen::Vector3f::UnitX()));
+  	transform_2.rotate(Eigen::AngleAxisf(theta, Eigen::Vector3f::UnitX()));
 
-  	pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_cloud (new pcl::PointCloud<pcl::PointXYZ> ());
-  	pcl::transformPointCloud(old_cloud, *transformed_cloud, transform_2);
+  	PointCloud<PointXYZ>::Ptr transformed_cloud(new PointCloud<PointXYZ>());
+  	transformPointCloud(old_cloud, *transformed_cloud, transform_2);
 
 	return *transformed_cloud;
 }

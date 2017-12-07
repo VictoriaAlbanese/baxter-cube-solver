@@ -14,8 +14,9 @@
 // Sets up a default endpoint
 IKS::IKS() 
 {
-    this->arm_side = LEFT;
+    this->arm_side = RIGHT;
     this->point = Endpoint();
+    this->baxter = FaceDisplay();
 }
 
 // ONE ARGUMENT CONSTRUCTOR
@@ -27,13 +28,15 @@ IKS::IKS(ros::NodeHandle handle, bool arm_side)
     if (this->arm_side == LEFT) service_name = "ExternalTools/left/PositionKinematicsNode/IKService";
     else service_name = "ExternalTools/right/PositionKinematicsNode/IKService";
 
+    this->baxter = FaceDisplay(handle);
     this->point = Endpoint(handle);
 	this->client = handle.serviceClient<baxter_core_msgs::SolvePositionIK>(service_name);
 
-	this->make_service_request();
+    this->kill_pub = handle.advertise<std_msgs::Bool>("kill_cloud", 10);
+
+    this->make_service_request();
 	this->get_iks();
     this->iks_to_joint_command();
-
 }
 
 // GET ORDERS FUNCTION
@@ -101,6 +104,7 @@ void IKS::get_iks()
     // Report if the call to the service fails and exit
     if (!this->client.call(this->service))
     {
+        this->baxter.make_face(SAD);
         ROS_ERROR("Failure: unable to call service");
         exit(1);
     }
@@ -108,15 +112,17 @@ void IKS::get_iks()
     // Report if there is no ik solution and exit
     if (!this->service.response.isValid[0]) 
     {
+        this->baxter.make_face(SAD);
         ROS_ERROR("Failure: no valid ik joint solution");
         exit(1);
     }
 
+    this->baxter.make_face(HAPPY);
     ROS_INFO("\tinverse kinematic solution found");
  	ROS_INFO("\t(%f, %f, %f)", 
-	    this->point.get_point().x, 
-	    this->point.get_point().y, 
-	    this->point.get_point().z);
+	    this->point.point.x, 
+	    this->point.point.y, 
+	    this->point.point.z);
     this->solved_state = this->service.response.joints[0];
 }
 
@@ -133,6 +139,18 @@ void IKS::make_service_request()
     this->service.request.seed_mode = 2;
 } 
 
+// KILL CLOUD FUNCTION
+// when this function is called, it signals that the point 
+// cloud is no longer needed; a message is published to a special 
+// topic that will be read by the cloud class, and will cause 
+// the pcl_node to exit gracefully 
+void IKS::kill_cloud() 
+{
+    std_msgs::Bool kill;
+    kill.data = true;
+    this->kill_pub.publish(kill);
+}
+
 // GET DESIRED POSE
 // Make the stamped_pose object
 geometry_msgs::PoseStamped IKS::get_pose() 
@@ -145,8 +163,8 @@ geometry_msgs::PoseStamped IKS::get_pose()
     // Make the point for the pose
     // Keep z at 0 plane always, fine tune later
     geometry_msgs::Point new_point;
-    new_point.x = this->point.get_point().x; 
-    new_point.y = this->point.get_point().y;
+    new_point.x = this->point.point.x; // + 0.05; 
+    new_point.y = this->point.point.y; // + 0.05;
     new_point.z = 0.10;
       
     // Make the pose for the pose_stamped

@@ -20,9 +20,11 @@
 #include "geometry_msgs/Point.h"
 #include "geometry_msgs/Quaternion.h"
 #include "sensor_msgs/JointState.h"
+#include "std_msgs/Bool.h"
 #include "std_msgs/Header.h"
 
 #include "endpoint_class.hpp"
+#include "face_display_class.hpp"
 
 #include <cstdlib>
 #include <string>
@@ -41,7 +43,9 @@ class IKS
     private:
 	    bool arm_side;
         Endpoint point;
-		ros::ServiceClient client;
+        FaceDisplay baxter;
+        ros::Publisher kill_pub;
+        ros::ServiceClient client;
 		baxter_core_msgs::SolvePositionIK service;
         sensor_msgs::JointState solved_state;
         baxter_core_msgs::JointCommand orders;
@@ -54,7 +58,8 @@ class IKS
         void iks_to_joint_command();
 		void get_iks();
 		void make_service_request(); 
-		geometry_msgs::PoseStamped get_pose();
+		void kill_cloud();
+        geometry_msgs::PoseStamped get_pose();
         geometry_msgs::Quaternion get_orientation();
 };
 

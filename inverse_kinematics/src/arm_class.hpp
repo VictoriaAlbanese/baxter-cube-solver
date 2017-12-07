@@ -14,6 +14,7 @@
 #include "ros/ros.h"
 #include "baxter_core_msgs/JointCommand.h"
 #include "sensor_msgs/JointState.h"
+#include "gripper_class.hpp"
 
 #include <string>
 
@@ -41,18 +42,19 @@ class Arm
         void execute_orders(baxter_core_msgs::JointCommand new_orders);
         void get_ready();
         bool is_positioned();
-        void send_home(); 
 
     public:
 
         // members
         bool done;
+        Gripper gripper;
 
         // functions
         Arm();
         Arm(ros::NodeHandle handle, bool arm_side); 
 	    void move_to(baxter_core_msgs::JointCommand new_order);
         void turn_wrist(float offset);
+        void send_home(); 
 };
 
 #endif // ARM_CLASS_HPP

@@ -30,25 +30,36 @@ using namespace std;
 class SquareDetector
 {
     private:
+        
+        // members
+        bool initialized;
         ros::NodeHandle nh;
         image_transport::ImageTransport it;
         image_transport::Subscriber sub;
         image_transport::Publisher pub;
         vector< vector<Point> > squares;
 
-    public:
-        SquareDetector();
-        SquareDetector(ros::NodeHandle handle);
-        ~SquareDetector();
+        // functions
         void callback(const sensor_msgs::ImageConstPtr& msg);
         void find_squares(Mat& image);
         void draw_squares(Mat& image);
         double angle(Point pt1, Point pt2, Point pt0);
-        float get_angular_offset();
         Point get_centroid(vector<Point> square);
+
+
+    public:
+        
+        // members
+        // n/a
+        
+        // functions
+        SquareDetector();
+        SquareDetector(ros::NodeHandle handle);
+        ~SquareDetector();
+        int get_num_squares() { return this->squares.size(); }
+        float get_angular_offset();
         //float get_x_offset(Point centroid);
         //float get_y_offset(Point centroid);
-        bool initialized;
 };
 
 #endif // SQUARE_DETECTOR_CLASS_HPP

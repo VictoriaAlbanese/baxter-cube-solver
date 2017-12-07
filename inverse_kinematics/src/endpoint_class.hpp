@@ -1,10 +1,10 @@
-////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////
 //
 // Programmer: Victoria Albanese
-// Filename: ik_client_class.hpp
+// Filename: endpoint_class.hpp
 //
-// Description: This declares a class which represents 
-// an endpoint for the ik solver
+// Description: Declares a class which represents the 
+// position aspect of the goal endpoint for the iks
 //
 //////////////////////////////////////////////////////////////
 
@@ -17,16 +17,22 @@
 class Endpoint
 {
     private: 
+
+        // members
         bool initialized;
-        geometry_msgs::Point point;
         ros::Subscriber sub;
 
+        // functions
+        void callback(const geometry_msgs::Point::ConstPtr& msg);
+
     public:
+
+        // members
+        geometry_msgs::Point point;
+        
+        // functions
         Endpoint();
         Endpoint(ros::NodeHandle handle); 
-        bool is_initialized() { return this->initialized; }
-        geometry_msgs::Point get_point() { return this->point; }
-        void callback(const geometry_msgs::Point::ConstPtr& msg);
 };
 
 #endif // ENDPOINT_CLASS_HPP

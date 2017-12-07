@@ -126,10 +126,12 @@ include_directories( ${catkin_INCLUDE_DIRS})
 
 add_executable(master 
     src/master_node.cpp 
+    src/gripper_class.cpp
     src/arm_class.cpp 
     src/iks_class.cpp 
     src/endpoint_class.cpp
     src/square_detector_class.cpp
+    src/face_display_class.cpp
 )
 target_link_libraries(master ${catkin_LIBRARIES})
 add_dependencies(master ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -138,7 +140,12 @@ add_executable(pcl_node src/pcl_node.cpp src/pcl_class.cpp)
 target_link_libraries(pcl_node ${catkin_LIBRARIES})
 add_dependencies(pcl_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-add_executable(find_square src/square_detector_node.cpp src/square_detector_class.cpp src/arm_class.cpp)
+add_executable(find_square 
+    src/square_detector_node.cpp 
+    src/square_detector_class.cpp 
+    src/gripper_class.cpp
+    src/arm_class.cpp
+)
 target_link_libraries(find_square ${catkin_LIBRARIES} ${OpenCV_LIBS})
 add_dependencies(find_square ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
