@@ -23,20 +23,17 @@ IKS::IKS()
 // Wait for an endpoint and then get the iks
 IKS::IKS(ros::NodeHandle handle, bool arm_side) 
 {
+    this->handle = handle;
+
     string service_name;
     this->arm_side = arm_side;
     if (this->arm_side == LEFT) service_name = "ExternalTools/left/PositionKinematicsNode/IKService";
     else service_name = "ExternalTools/right/PositionKinematicsNode/IKService";
 
     this->baxter = FaceDisplay(handle);
-    this->point = Endpoint(handle);
 	this->client = handle.serviceClient<baxter_core_msgs::SolvePositionIK>(service_name);
 
     this->kill_pub = handle.advertise<std_msgs::Bool>("kill_cloud", 10);
-
-    this->make_service_request();
-	this->get_iks();
-    this->iks_to_joint_command();
 }
 
 // GET ORDERS FUNCTION
@@ -44,6 +41,12 @@ IKS::IKS(ros::NodeHandle handle, bool arm_side)
 // then gets iks and returns orders to the arms to get there
 baxter_core_msgs::JointCommand IKS::get_orders() 
 {
+    this->point = Endpoint(this->handle);
+    
+    this->make_service_request();
+	this->get_iks();
+    this->iks_to_joint_command();
+
     return this->orders;
 }
 

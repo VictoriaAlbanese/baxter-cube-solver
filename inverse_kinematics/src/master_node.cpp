@@ -32,14 +32,8 @@ int main(int argc, char **argv)
     Arm right_arm(nh, RIGHT);
     ROS_INFO("ARMS INITIALIZED...");
     
-    // create an imverse kinematic solver
-    // and wait for a location to be published
-    ROS_INFO("LOOKING FOR CUBE...");
-    baxter.make_face(THINKING);
+    // create some variables for later
     IKS ik_solver(nh, RIGHT);
-    ROS_INFO("CUBE FOUND...");
-    
-    // Make a square detector, and offset variable for later
     SquareDetector detector(nh);
     float offset;
 
@@ -56,9 +50,10 @@ int main(int argc, char **argv)
             case OVER_CUBE:
  
                 // use the iks to move over the cube
-                ROS_INFO("MOVING ARM OVER CUBE...");
+                ROS_INFO("LOOKING FOR CUBE...");
                 baxter.make_face(THINKING);
                 right_arm.move_to(ik_solver.get_orders());
+                ROS_INFO("MOVING ARM OVER CUBE...");
  
 		        // if we are hovering over the cube, move to the next stage
                 if (right_arm.done) 

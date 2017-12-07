@@ -44,6 +44,7 @@ class IKS
 	    bool arm_side;
         Endpoint point;
         FaceDisplay baxter;
+        ros::NodeHandle handle;
         ros::Publisher kill_pub;
         ros::ServiceClient client;
 		baxter_core_msgs::SolvePositionIK service;
