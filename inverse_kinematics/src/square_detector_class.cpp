@@ -80,7 +80,7 @@ void SquareDetector::callback(const sensor_msgs::ImageConstPtr& msg)
     if (squares.size() != 0) this->draw_squares(cv_ptr->image);
 
     // Draw a circle at the desired centroid of the square should be
-    circle(cv_ptr->image, Point(X_DESIRED, Y_DESIRED), 5, CV_RGB(255,0,0));
+    circle(cv_ptr->image, Point(X_DESIRED, Y_DESIRED), 10, CV_RGB(255,0,0));
 
     // Update GUI Window
     imshow(WINDOW_NAME, cv_ptr->image);
@@ -182,14 +182,8 @@ void SquareDetector::draw_squares(Mat& image)
     int x_centroid = 0, y_centroid = 0;
     for (size_t i = 0; i < this->squares.size(); i++) 
     {
-        for (int j = 0; j < 4; j++) 
-        {
-            //ROS_INFO("Corner %d (%d, %d)", j, this->squares[i][j].x, this->squares[i][j].y);
-            circle(image, this->squares[i][j], 3 * (j + 1), CV_RGB(0,0,255), -1);
-        }    
-
         Point centroid = this->get_centroid(this->squares[i]);
-        circle(image, centroid, 10, CV_RGB(0,255,0), -1);
+        circle(image, centroid, 4, CV_RGB(0,255,0), -1);
     }
         
     imshow(WINDOW_NAME, image);
@@ -217,6 +211,8 @@ Point SquareDetector::get_centroid(vector<Point> square)
 // gets the angle that the cube is rotated
 float SquareDetector::get_angular_offset() 
 {
+    while (this->squares.size() == 0) ros::spinOnce();
+        
     float dx = this->squares[0][2].x - this->squares[0][0].x;
     float dy = this->squares[0][2].y - this->squares[0][0].y;
     

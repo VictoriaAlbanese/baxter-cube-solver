@@ -17,6 +17,7 @@
 #include "geometry_msgs/Pose.h"
 #include "sensor_msgs/JointState.h"
 
+#include "endpoint_class.hpp"
 #include "gripper_class.hpp"
 
 #include <string>
@@ -64,6 +65,8 @@ class Arm
         bool done() { return this->done_; }
 	    void move_to(baxter_core_msgs::JointCommand new_order);
         void adjust_endpoint_x(float offset);
+        void adjust_endpoint_y(float offset);
+        void lower_arm();
         void turn_wrist(float offset);
         void send_home(); 
 };

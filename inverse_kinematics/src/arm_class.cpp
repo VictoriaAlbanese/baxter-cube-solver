@@ -33,7 +33,7 @@ Arm::Arm(ros::NodeHandle handle, bool arm_side)
 {
     this->init();
     this->arm_side = arm_side;
- 
+
     Gripper gripper(handle, this->arm_side);
     this->gripper = gripper; 
     if (!this->gripper.calibrated()) this->gripper.calibrate();
@@ -81,16 +81,44 @@ void Arm::turn_wrist(float offset)
     this->move_to(new_orders);
 }
 
-// ADJUST ENDPOINT FUNCTION
+// ADJUST ENDPOINT X FUNCTION
 // moves baxters arms slightly adjusting his x position over the cube 
 // by a tiny bit in a direction given by the offset until it is centered 
 void Arm::adjust_endpoint_x(float offset) 
 {
-    float increment = 0.02;
-    if (offset < 0) increment*= -1;
+    float increment = 0.01;
+    if (offset > 0) increment*= -1;
 
+    // changing "y" in x function because it translates to
+    // movement in the "y direction" of the resulting image
+    geometry_msgs::Pose new_pose = this->endpoint;
+    new_pose.position.y+= increment;
+
+    this->point_pub.publish(new_pose);
+}
+
+// ADJUST ENDPOINT Y FUNCTION
+// moves baxters arms slightly adjusting his x position over the cube 
+// by a tiny bit in a direction given by the offset until it is centered 
+void Arm::adjust_endpoint_y(float offset) 
+{
+    float increment = 0.01;
+    if (offset > 0) increment*= -1;
+
+    // changing "x" in y function because it translates to
+    // movement in the "y direction" of the resulting image
     geometry_msgs::Pose new_pose = this->endpoint;
     new_pose.position.x+= increment;
+
+    this->point_pub.publish(new_pose);
+}
+
+// LOWER ARM FUNCTION
+// lowers baxter's arm a bit
+void Arm::lower_arm() 
+{
+    geometry_msgs::Pose new_pose = this->endpoint;
+    new_pose.position.z-= 0.05;
 
     this->point_pub.publish(new_pose);
 }
@@ -227,7 +255,7 @@ bool Arm::is_positioned()
         if (fabs(this->orders.command[i] - this->current_joint_positions[i]) > 0.01 )
         {
             /* 
-            ROS_INFO("moving %s from [%f] to [%f]", 
+            ROS_INFO("\tmoving %s from [%f] to [%f]", 
                   orders.names[i].c_str(), 
                   this->current_joint_positions[i], 
                   this->orders.command[i]);
@@ -236,7 +264,7 @@ bool Arm::is_positioned()
         }
     }
 
-    ROS_INFO("Repositioned...");
+    //ROS_INFO("\trepositioned...");
     return true;
 }
 

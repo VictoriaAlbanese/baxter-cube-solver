@@ -116,7 +116,7 @@ void Cloud::set_highest_point()
     this->listener.transformPoint("/base", p_in, p_out);
 
     // Set & print the point
-	ROS_INFO("%d (%f, %f, %f)", index, p_out.point.x, p_out.point.y, p_out.point.z);
+	//ROS_INFO("%d (%f, %f, %f)", index, p_out.point.x, p_out.point.y, p_out.point.z);
 	this->highest_point = p_out.point;
 
     // Publish the pose

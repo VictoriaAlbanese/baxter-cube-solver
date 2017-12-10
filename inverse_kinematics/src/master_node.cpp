@@ -13,7 +13,16 @@
 #include "square_detector_class.hpp"
 #include "face_display_class.hpp"
 
-enum State {INITIALIZE, OVER_CUBE, FIX_ORIENTATION, FIX_POSITION, TEARDOWN, DONE};
+enum State 
+{
+    INITIALIZE, 
+    OVER_CUBE, 
+    FIX_ORIENTATION, 
+    FIX_POSITION, 
+    LOWERING,
+    TEARDOWN, 
+    DONE
+};
 
 int main(int argc, char **argv)
 {
@@ -48,7 +57,7 @@ int main(int argc, char **argv)
     		        // if the arms are in position, move on
                     if (left_arm.done() && right_arm.done() && count != 0) 
                     {
-                        ROS_INFO("ARMS INITIALIZED...");
+                        ROS_INFO("ARMS RESET...");
                         state = OVER_CUBE;
                         count = 0;
                     }
@@ -56,7 +65,7 @@ int main(int argc, char **argv)
                     // otherwise, move the arms out of the way
                     else if (count == 0) 
                     { 
-                        ROS_INFO("INITIALIZING ARMS...");
+                        ROS_INFO("RESETTING ARMS...");
                         left_arm.send_home();
                         right_arm.send_home();
                         count++;
@@ -105,14 +114,22 @@ int main(int argc, char **argv)
                         ik_solver.kill_cloud();
                         count++;
 
+                        // only do this stuff the first time we try and fix the orientation
+                        if (count == 1) 
+                        {
+                            ROS_INFO("FIXING ORIENTATION...");
+                            ROS_INFO("\tgoal offset is between 58 and 62 degrees");
+                            baxter.make_face(THINKING);
+                            offset = detector.get_angular_offset();
+                        }
+                        
                         // turn the wrist until cube is oriented correctly
-                        ROS_INFO("FIXING ORIENTATION...");
-                        baxter.make_face(THINKING);
-                        if (fabs(offset * 180 / M_PI) < 55 || fabs(offset * 180 / M_PI) > 65)
+                        if (fabs(offset * 180 / M_PI) < 58 || fabs(offset * 180 / M_PI) > 62)
                         {
                             offset = detector.get_angular_offset();
-                            ROS_INFO("\toffset is [%f] rads or [%f] degs", offset, offset * 180 / M_PI);
+                            ROS_INFO("\toffset is [%f] degrees", offset * 180 / M_PI);
                             right_arm.turn_wrist(offset);
+                            count++;
                         }
       
                         // otherwise, move on to the next phase 
@@ -120,23 +137,43 @@ int main(int argc, char **argv)
                         { 
                             ROS_INFO("ORIENTATION FIXED...");
                             baxter.make_face(HAPPY);
-                            state = TEARDOWN;
+                            state = FIX_POSITION;
                             count = 0;
                         }
                     }
 
                     break;
 
-                /*case FIX_POSITION:
+                case FIX_POSITION:
                                
-                    // turn the wrist until cube is oriented correctly
-                    ROS_INFO("FIXING POSITION...");
-                    baxter.make_face(THINKING);
-                    if (fabs(offset_x) < 5)
+                    // adjust the endpoint until the cube is positioned correctly ...
+                    if (count == 0) 
+                    {
+                        ROS_INFO("FIXING POSITION...");
+                        ROS_INFO("\tgoal offset is within 10px in both directions");
+                        baxter.make_face(THINKING);
+                        offset_x = detector.get_x_offset();
+                        offset_y = detector.get_y_offset();
+                    }
+
+                    // ... in the x direction
+                    if (fabs(offset_x) > 10)
                     {
                         offset_x = detector.get_x_offset();
                         ROS_INFO("\tx offset is [%f]", offset_x);
                         right_arm.adjust_endpoint_x(offset_x);
+                        right_arm.move_to(ik_solver.get_orders());
+                        count++;
+                    }
+
+                    // ... in the y direction
+                    else if (fabs(offset_y) > 10)
+                    {
+                        offset_y = detector.get_y_offset();
+                        ROS_INFO("\ty offset is [%f]", offset_y);
+                        right_arm.adjust_endpoint_y(offset_y);
+                        right_arm.move_to(ik_solver.get_orders());
+                        count++;
                     }
       
                     // otherwise, move on to the next phase 
@@ -148,6 +185,30 @@ int main(int argc, char **argv)
                         count = 0;
                     }
 
+                    break;
+
+                /*case LOWERING:
+    
+                    // if we are done lowering our arm, move to the next stage
+                    if (left_arm.done() && right_arm.done() && count != 0) 
+                    {
+                        ROS_INFO("ARM LOWERED...");
+                        baxter.make_face(HAPPY);
+                        state = TEARDOWN;
+                        count = 0;
+                    }
+             
+                    // use the iks to lower the arm a bit
+                    else if (count == 0) 
+                    {
+                        ROS_INFO("LOWERING ARM...");
+                        baxter.make_face(THINKING);
+                        right_arm.adjust_endpoint_x(offset_x);
+                        right_arm.move_to(ik_solver.get_orders());
+                        ros::Duration(1.0).sleep();
+                        count++;
+                    }
+                                           
                     break;*/
                 
                 case TEARDOWN:

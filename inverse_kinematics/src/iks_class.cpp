@@ -46,7 +46,7 @@ IKS::IKS(ros::NodeHandle handle, bool arm_side)
 baxter_core_msgs::JointCommand IKS::get_orders() 
 {
     this->endpoint = Endpoint(this->handle);
-    
+   
     this->make_service_request();
 	this->get_iks();
     this->iks_to_joint_command();
