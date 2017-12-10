@@ -31,7 +31,7 @@ class Endpoint
         ros::Subscriber sub;
 
         // functions
-        void callback(const geometry_msgs::Point::ConstPtr& msg);
+        void callback(const geometry_msgs::Pose::ConstPtr& msg);
         void init();
         void initialize_pose();
         std_msgs::Header initialize_header();

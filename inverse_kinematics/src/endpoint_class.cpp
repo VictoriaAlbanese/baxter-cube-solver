@@ -27,7 +27,7 @@ Endpoint::Endpoint()
 Endpoint::Endpoint(ros::NodeHandle handle) 
 {
     this->init();
-    this->sub = handle.subscribe<geometry_msgs::Point>("goal_point", 10, &Endpoint::callback, this);
+    this->sub = handle.subscribe<geometry_msgs::Pose>("goal_point", 10, &Endpoint::callback, this);
 
     while (!this->initialized) ros::spinOnce();
 }
@@ -79,20 +79,12 @@ void Endpoint::set_orientation(float YAW)
 // CALLBACK FUNCTION
 // sets the point to the value 
 // published to the goal point topic
-void Endpoint::callback(const geometry_msgs::Point::ConstPtr& msg) 
+void Endpoint::callback(const geometry_msgs::Pose::ConstPtr& msg) 
 {
     this->initialized = true;
     this->initialize_pose();
-    this->set_position(*msg);
-    
-    /*
-    ROS_INFO("Point initialized");
-    if (this->initialized == true) ROS_INFO("\tinitialized: true");
-    else ROS_INFO("\tinitialized: false");
-    ROS_INFO("\tx[%f]", this->point.x);
-    ROS_INFO("\ty[%f]", this->point.y);
-    ROS_INFO("\tz[%f]", this->point.z);
-    */
+    this->set_position(msg->position);
+    this->set_orientation();
 }
 
 // INIT FUNCTION

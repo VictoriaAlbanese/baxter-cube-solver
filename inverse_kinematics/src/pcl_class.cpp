@@ -29,7 +29,7 @@ Cloud::Cloud(ros::NodeHandle handle)
     this->initialized = false;
     this->done = false;
 
-    this->point_pub = handle.advertise<geometry_msgs::Point>("goal_point", 10);
+    this->point_pub = handle.advertise<geometry_msgs::Pose>("goal_point", 10);
     this->cloud_pub = handle.advertise<sensor_msgs::PointCloud2>("filtered_cloud", 10);
 	this->cloud_sub = handle.subscribe("camera/depth/points", 1, &Cloud::cloud_callback, this);
 	this->kill_sub = handle.subscribe("kill_cloud", 1, &Cloud::kill_callback, this);
@@ -115,15 +115,15 @@ void Cloud::set_highest_point()
     p_in.point.z = point_cloud.points[index].z;
     this->listener.transformPoint("/base", p_in, p_out);
 
-    // Set, print, & publish this point
+    // Set & print the point
 	ROS_INFO("%d (%f, %f, %f)", index, p_out.point.x, p_out.point.y, p_out.point.z);
 	this->highest_point = p_out.point;
-    geometry_msgs::Point point;
-    point.x = this->highest_point.x;
-    point.y = this->highest_point.y;
-    point.z = this->highest_point.z;
-    this->point_pub.publish(point);
 
+    // Publish the pose
+    geometry_msgs::Pose pose;
+    pose.position = this->highest_point;
+    pose.orientation = this->initialize_orientation();
+    this->point_pub.publish(pose);
 }
 
 // REMOVE OUTLIERS FUNCTION
@@ -183,6 +183,34 @@ PointCloud<PointXYZ> Cloud::rotate_points(PointCloud<PointXYZ> old_cloud, float 
   	transformPointCloud(old_cloud, *transformed_cloud, transform_2);
 
 	return *transformed_cloud;
+}
+
+// INITIALIZE ORIENTATION
+// initialize the orientation aspect of the pose
+// such that the grippers are pointing straight down
+geometry_msgs::Quaternion Cloud::initialize_orientation() {
+
+    double mathc1 = cos(PITCH);
+    double maths1 = sin(PITCH);
+    double mathc2 = cos(YAW);
+    double maths2 = sin(YAW);
+    double mathc3 = cos(ROLL);
+    double maths3 = sin(ROLL);
+                                                                     
+    double oriw = sqrt(1.0 + mathc1 * mathc2 + mathc1 * mathc3 - maths1 * maths2 * maths3 + mathc2 * mathc3) / 2.0;
+    double oriw4 = (4.0 * oriw);
+        
+    double orix = (mathc2 * maths3 + mathc1 * maths3 + maths1 * maths2 * mathc3) / oriw4;
+    double oriy = (maths1 * mathc2 + maths1 * mathc3 + mathc1 * maths2 * maths3) / oriw4;
+    double oriz = (-maths1 * maths3 + mathc1 * maths2 * mathc3 + maths2) / oriw4;
+
+	geometry_msgs::Quaternion q;
+    q.x = orix;
+    q.y = oriy;
+    q.z = oriz;
+    q.w = oriw;
+
+    return q;
 }
 
 ////////////////////////////////////////////////////////////////

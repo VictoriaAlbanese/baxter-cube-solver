@@ -16,6 +16,7 @@
 
 #include "ros/ros.h"
 #include "geometry_msgs/Point.h"
+#include "geometry_msgs/Pose.h"
 #include "pcl/common/transforms.h"
 #include "pcl/filters/voxel_grid.h"
 #include "pcl/filters/statistical_outlier_removal.h"
@@ -27,6 +28,10 @@
 #include "sensor_msgs/point_cloud_conversion.h"
 #include "std_msgs/Bool.h"
 #include "tf/transform_listener.h"
+
+#define ROLL 0
+#define PITCH 3.14
+#define YAW 0
 
 using namespace pcl;
 
@@ -50,6 +55,7 @@ class Cloud
         void voxel_filter();
         void set_highest_point();
         PointCloud<PointXYZ> rotate_points(PointCloud<PointXYZ> old_cloud, float theta);
+        geometry_msgs::Quaternion initialize_orientation();
 
     public:
 

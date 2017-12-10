@@ -14,7 +14,6 @@
 #include "ros/ros.h"
 #include "baxter_core_msgs/EndpointState.h"
 #include "baxter_core_msgs/JointCommand.h"
-#include "geometry_msgs/Point.h"
 #include "geometry_msgs/Pose.h"
 #include "sensor_msgs/JointState.h"
 
