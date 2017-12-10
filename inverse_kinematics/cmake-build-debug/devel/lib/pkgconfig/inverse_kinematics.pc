@@ -1,0 +1,8 @@
+prefix=/home/csrobot/ros_ws/src/inverse_kinematics/cmake-build-debug/devel
+
+Name: inverse_kinematics
+Description: Description of inverse_kinematics
+Version: 0.0.0
+Cflags: 
+Libs: -L/home/csrobot/ros_ws/src/inverse_kinematics/cmake-build-debug/devel/lib 
+Requires: baxter_core_msgs geometry_msgs roscpp std_msgs message_runtime

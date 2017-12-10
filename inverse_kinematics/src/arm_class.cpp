@@ -15,14 +15,11 @@
 // Public Member Functions
 
 // DEFAULT CONSTRUCTOR
-// does not initialize ros or the object
-// makes a right arm by default because why not
+// does not initialize ros
+// makes a right arm by default
 Arm::Arm() 
 {
-    this->initialized = false;
-    this->ready = false;
-    this->done = false;
-    
+    this->init();
     this->arm_side = RIGHT;
 
     Gripper gripper;
@@ -30,31 +27,24 @@ Arm::Arm()
 }
 
 // CONSTRUCTOR
-// initializes ros, and the object by 
-// waiting for the joint callback to be called
+// does the ros initialization and 
+// calibrates/opens the gripper if necessary 
 Arm::Arm(ros::NodeHandle handle, bool arm_side)
 {
-    this->initialized = false;
-    this->ready = false;
-    this->done = false;
-
-    string pub_topic;
-    if (arm_side == LEFT) pub_topic = "/robot/limb/left/joint_command";
-    else pub_topic = "/robot/limb/right/joint_command";
-    
+    this->init();
     this->arm_side = arm_side;
-
-    Gripper gripper(handle, arm_side);
+ 
+    Gripper gripper(handle, this->arm_side);
     this->gripper = gripper; 
-    if (!this->gripper.calibrated) this->gripper.calibrate();
+    if (!this->gripper.calibrated()) this->gripper.calibrate();
     this->gripper.release();
 
+    string pub_topic;
+    if (this->arm_side == LEFT) pub_topic = "/robot/limb/left/joint_command";
+    else pub_topic = "/robot/limb/right/joint_command";
+   
     this->pub = handle.advertise<baxter_core_msgs::JointCommand>(pub_topic, 10);
     this->sub = handle.subscribe<sensor_msgs::JointState>("/robot/joint_states", 10, &Arm::joint_callback, this);
-    
-    while (!this->initialized) ros::spinOnce();
-    
-    this->send_home();
 }
 
 // MOVE TO FUNCTION
@@ -63,7 +53,7 @@ Arm::Arm(ros::NodeHandle handle, bool arm_side)
 void Arm::move_to(baxter_core_msgs::JointCommand new_order) 
 {
     this->get_ready();
-    this->execute_orders(new_order);
+    this->orders = new_order;
 }
 
 // TURN WRIST FUNCTION
@@ -71,22 +61,18 @@ void Arm::move_to(baxter_core_msgs::JointCommand new_order)
 // of the grippers by a tiny bit in a direction given by the offset 
 void Arm::turn_wrist(float offset) 
 {
-    this->get_ready();
-    
-    float increment = 0.01;
+    float increment = 0.02;
     if (offset < 0) increment*= -1;
                   
-    baxter_core_msgs::JointCommand msg = this->orders;
+    baxter_core_msgs::JointCommand new_orders = this->orders;
 
-    for (size_t i = 0; i < msg.names.size(); i++)
+    for (size_t i = 0; i < new_orders.names.size(); i++)
     {
-        if (msg.names[i].find((arm_side == LEFT ? "left_w2" : "right_w2")) != std::string::npos)
-        {   
-            msg.command[i]+= increment;
-        }   
+        string name = (arm_side == LEFT ? "left_w2" : "right_w2");
+        if (new_orders.names[i].find(name) != string::npos) new_orders.command[i]+= increment;
     }
 
-    this->execute_orders(msg);
+    this->move_to(new_orders);
 }
 
 // SEND HOME
@@ -94,52 +80,50 @@ void Arm::turn_wrist(float offset)
 // outside the view of the point cloud
 void Arm::send_home() 
 {
-   this->get_ready();
-    
-    baxter_core_msgs::JointCommand msg;
-    msg.mode = baxter_core_msgs::JointCommand::POSITION_MODE;
+    baxter_core_msgs::JointCommand new_orders;
+    new_orders.mode = baxter_core_msgs::JointCommand::POSITION_MODE;
 
     if (this->arm_side == LEFT) 
     {
-        msg.names.push_back("left_e0");
-        msg.names.push_back("left_e1");
-        msg.names.push_back("left_s0");
-        msg.names.push_back("left_s1");
-        msg.names.push_back("left_w0");
-        msg.names.push_back("left_w1");
-        msg.names.push_back("left_w2");
+        new_orders.names.push_back("left_e0");
+        new_orders.names.push_back("left_e1");
+        new_orders.names.push_back("left_s0");
+        new_orders.names.push_back("left_s1");
+        new_orders.names.push_back("left_w0");
+        new_orders.names.push_back("left_w1");
+        new_orders.names.push_back("left_w2");
 
-        msg.command.resize(msg.names.size());
-        msg.command[0] = 0.0;
-        msg.command[1] = 1.3;
-        msg.command[2] = 0.0; 
-        msg.command[3] = -0.8;
-        msg.command[4] = 0.0;
-        msg.command[5] = 0.95; 
-        msg.command[6] = 0.0;
+        new_orders.command.resize(new_orders.names.size());
+        new_orders.command[0] = 0.0;
+        new_orders.command[1] = 1.3;
+        new_orders.command[2] = 0.0; 
+        new_orders.command[3] = -0.8;
+        new_orders.command[4] = 0.0;
+        new_orders.command[5] = 0.95; 
+        new_orders.command[6] = 0.0;
     }
 
     else
     {
-        msg.names.push_back("right_e0");
-        msg.names.push_back("right_e1");
-        msg.names.push_back("right_s0");
-        msg.names.push_back("right_s1");
-        msg.names.push_back("right_w0");
-        msg.names.push_back("right_w1");
-        msg.names.push_back("right_w2");
+        new_orders.names.push_back("right_e0");
+        new_orders.names.push_back("right_e1");
+        new_orders.names.push_back("right_s0");
+        new_orders.names.push_back("right_s1");
+        new_orders.names.push_back("right_w0");
+        new_orders.names.push_back("right_w1");
+        new_orders.names.push_back("right_w2");
 
-        msg.command.resize(msg.names.size());
-        msg.command[0] = 0.0; 
-        msg.command[1] = 1.3;
-        msg.command[2] = 0.0;
-        msg.command[3] = -0.8;
-        msg.command[4] = 0.0; 
-        msg.command[5] = 0.95;
-        msg.command[6] = 0.0; 
+        new_orders.command.resize(new_orders.names.size());
+        new_orders.command[0] = 0.0; 
+        new_orders.command[1] = 1.3;
+        new_orders.command[2] = 0.0;
+        new_orders.command[3] = -0.8;
+        new_orders.command[4] = 0.0; 
+        new_orders.command[5] = 0.95;
+        new_orders.command[6] = 0.0; 
     }
 
-    this->execute_orders(msg);
+    this->move_to(new_orders);
 }
 
 //////////////////////////////////////////////////////////////
@@ -151,28 +135,36 @@ void Arm::send_home()
 // if not in accordance with the orders, publish commands
 void Arm::joint_callback(const sensor_msgs::JointStateConstPtr& msg) 
 {
-    this->initialized = true;
+    this->initialized_ = true;
 
     this->current_joint_positions.clear();
     for (size_t i = 0; i < msg->position.size(); i++)
     {
-        if (msg->name[i].find((arm_side == LEFT ? "left" : "right")) != std::string::npos)
-        {   
-            this->current_joint_positions.push_back(msg->position[i]);
-        }   
+        string side = (arm_side == LEFT ? "left" : "right");
+        if (msg->name[i].find(side) != string::npos) this->current_joint_positions.push_back(msg->position[i]);
     }
 
-    if (this->ready && !this->is_positioned()) 
+    if (this->ready_ && !this->is_positioned()) 
     {
-        this->done = false;
+        this->done_ = false;
         this->pub.publish(this->orders);
     }
 
-    else if (this->ready && this->is_positioned()) 
+    else if (this->ready_ && this->is_positioned()) 
     {
-        this->done = true;
-        this->ready = false;
+        this->done_ = true;
+        this->ready_ = false;
     }
+}
+
+// INIT FUNCTION
+// common code in constructors
+// sets all bools to false
+void Arm::init() 
+{
+    this->initialized_ = false;
+    this->ready_ = false;
+    this->done_ = false;
 }
 
 // GET READY FUNCTION
@@ -180,17 +172,8 @@ void Arm::joint_callback(const sensor_msgs::JointStateConstPtr& msg)
 // which will prepare the joints to make a movement
 void Arm::get_ready() 
 {
-    this->ready = true;
-    this->done = false;
-}
-
-// EXECUTE ORDERS FUNCTION
-// sets new orders for the joints, and waits for 
-// those orders to be completed before continuing
-void Arm::execute_orders(baxter_core_msgs::JointCommand new_orders) 
-{
-    this->orders = new_orders;
-    while (!this->done) ros::spinOnce();
+    this->ready_ = true;
+    this->done_ = false;
 }
 
 // IS POSITIONED FUNCTION
@@ -202,12 +185,17 @@ bool Arm::is_positioned()
     {
         if (fabs(this->orders.command[i] - this->current_joint_positions[i]) > 0.01 )
         {
-            //ROS_INFO("moving %s from [%f] to [%f]", orders.names[i].c_str(), this->current_joint_positions[i], this->orders.command[i]);
+            /* 
+            ROS_INFO("moving %s from [%f] to [%f]", 
+                  orders.names[i].c_str(), 
+                  this->current_joint_positions[i], 
+                  this->orders.command[i]);
+            */
             return false;
         }
     }
 
-    //ROS_INFO("Repositioned...");
+    ROS_INFO("Repositioned...");
     return true;
 }
 

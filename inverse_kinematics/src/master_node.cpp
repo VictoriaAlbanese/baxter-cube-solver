@@ -13,92 +13,142 @@
 #include "square_detector_class.hpp"
 #include "face_display_class.hpp"
 
-enum State {OVER_CUBE, FIX_ORIENTATION, DONE};
+enum State {INITIALIZE, OVER_CUBE, FIX_ORIENTATION, TEARDOWN, DONE};
 
 int main(int argc, char **argv)
 {
     // initialize the node and create a node handle
     ros::init(argc, argv, "master_node");
     ros::NodeHandle nh;
+    ros::Rate loop_rate(10);
 
     // Make baxter smile :)
     FaceDisplay baxter(nh);
     baxter.make_face(HAPPY);
 
-    // create, initialize, and move left 
-    // and right arms to a starting position
-    ROS_INFO("INITIALIZING ARMS...");
+    // make some variables for later
     Arm left_arm(nh, LEFT);
     Arm right_arm(nh, RIGHT);
-    ROS_INFO("ARMS INITIALIZED...");
-    
-    // create some variables for later
     IKS ik_solver(nh, RIGHT);
     SquareDetector detector(nh);
     float offset;
-
-    // set loop rate, spin once
-    ros::Rate loop_rate(10);
-    ros::spinOnce();
+    int count = 0;
 
     // main program content
-    State state = OVER_CUBE;
+    State state = INITIALIZE;
     while (ros::ok() && state != DONE) 
     {
-        switch (state) 
+        // if everything is initialized, start doing the dirty
+        if (left_arm.initialized() && right_arm.initialized()) 
         {
-            case OVER_CUBE:
- 
-                // use the iks to move over the cube
-                ROS_INFO("LOOKING FOR CUBE...");
-                baxter.make_face(THINKING);
-                right_arm.move_to(ik_solver.get_orders());
-                ROS_INFO("MOVING ARM OVER CUBE...");
- 
-		        // if we are hovering over the cube, move to the next stage
-                if (right_arm.done) 
-                {
-		            ROS_INFO("ARM OVER CUBE...");
-                    baxter.make_face(HAPPY);
-                    state = FIX_ORIENTATION;
-                    ros::Duration(1.0).sleep();
-                }
-                
-	            break;
-
-            case FIX_ORIENTATION:
-               
-                // if no squares are detected, move out of the point cloud 
-                // attempt moving over the cube again
-                if (detector.get_num_squares() == 0) 
-                {
-                    ROS_INFO("NO SQUARES DETECTED, TRYING AGAIN...");
-                    baxter.make_face(SAD);
-                    right_arm.send_home();
-                    state = OVER_CUBE;
-                } 
-
-                else 
-                {
-                    // kill the cloud, no longer needed 
-                    ik_solver.kill_cloud();
-    
-                    // turn the wrist until cube is oriented correctly
-                    ROS_INFO("FIXING ORIENTATION...");
-                    baxter.make_face(THINKING);
-                    while (fabs(offset * 180 / M_PI) < 55 || fabs(offset * 180 / M_PI) > 65)
+            switch (state) 
+            {
+                case INITIALIZE:
+         
+    		        // if the arms are in position, move on
+                    if (left_arm.done() && right_arm.done() && count != 0) 
                     {
-                        offset = detector.get_angular_offset();
-                        //ROS_INFO("\toffset is [%f] rads or [%f] degs", offset, offset * 180 / M_PI);
-                        right_arm.turn_wrist(offset);
+                        ROS_INFO("ARMS INITIALIZED...");
+                        state = OVER_CUBE;
+                        count = 0;
                     }
-    
-                    ROS_INFO("ORIENTATION FIXED...");
-                    baxter.make_face(HAPPY);
-                    state = DONE;
-                }
+     
+                    // otherwise, move the arms out of the way
+                    else if (count == 0) 
+                    { 
+                        ROS_INFO("INITIALIZING ARMS...");
+                        left_arm.send_home();
+                        right_arm.send_home();
+                        count++;
+                    }
 
-                break;
+    	            break;
+    
+                case OVER_CUBE:
+    
+                    // if we are hovering over the cube, move to the next stage
+                    if (left_arm.done() && right_arm.done() && count != 0) 
+                    {
+    		            ROS_INFO("ARM OVER CUBE...");
+                        baxter.make_face(HAPPY);
+                        state = FIX_ORIENTATION;
+                        count = 0;
+                    }
+             
+                    // use the iks to move over the cube
+                    else if (count == 0) 
+                    {
+                        ROS_INFO("LOOKING FOR CUBE...");
+                        baxter.make_face(THINKING);
+                        right_arm.move_to(ik_solver.get_orders());
+                        ROS_INFO("MOVING ARM OVER CUBE...");
+                        ros::Duration(1.0).sleep();
+                        count++;
+                    }
+
+                    break;
+    
+                case FIX_ORIENTATION:
+                   
+                    // if no squares are detected, move out of the point cloud  
+                    // attempt moving over the cube again
+                    if (detector.get_num_squares() == 0 && count == 0) 
+                    {
+                        ROS_INFO("NO SQUARES DETECTED, TRYING AGAIN...");
+                        baxter.make_face(SAD);
+                        state = INITIALIZE;
+                    } 
+    
+                    else 
+                    {
+                        // kill the cloud, no longer needed 
+                        ik_solver.kill_cloud();
+                        count++;
+
+                        // turn the wrist until cube is oriented correctly
+                        ROS_INFO("FIXING ORIENTATION...");
+                        baxter.make_face(THINKING);
+                        if (fabs(offset * 180 / M_PI) < 55 || fabs(offset * 180 / M_PI) > 65)
+                        {
+                            offset = detector.get_angular_offset();
+                            //ROS_INFO("\toffset is [%f] rads or [%f] degs", offset, offset * 180 / M_PI);
+                            right_arm.turn_wrist(offset);
+                        }
+      
+                        // otherwise, move on to the next phase 
+                        else 
+                        { 
+                            ROS_INFO("ORIENTATION FIXED...");
+                            baxter.make_face(HAPPY);
+                            state = TEARDOWN;
+                            count = 0;
+                        }
+                    }
+
+                    break;
+                
+                case TEARDOWN:
+                     
+    		        // if the arms are in position, move on
+                    if (left_arm.done() && right_arm.done() && count != 0) 
+                    {
+                        ROS_INFO("ARMS RESET...");
+                        state = DONE;
+                        count = 0;
+                    }
+     
+                    // otherwise, move the arms out of the way
+                    else if (count == 0) 
+                    { 
+                        ROS_INFO("RESETTING ARMS...");
+                        left_arm.send_home();
+                        right_arm.send_home();
+                        count++;
+                    }
+
+    	            break;
+            }
+
         }
 
         // spin & sleep
@@ -107,8 +157,6 @@ int main(int argc, char **argv)
     }
 
     // reset the arms
-    left_arm.send_home();
-    right_arm.send_home();
     ROS_INFO("DONE...");
 
     return 0;

@@ -1,0 +1,8 @@
+prefix=/usr/local
+
+Name: inverse_kinematics
+Description: Description of inverse_kinematics
+Version: 0.0.0
+Cflags: 
+Libs: -L/usr/local/lib 
+Requires: baxter_core_msgs geometry_msgs roscpp std_msgs message_runtime

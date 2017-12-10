@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/csrobot/ros_ws/src/inverse_kinematics/cmake-build-debug/devel/setup.sh

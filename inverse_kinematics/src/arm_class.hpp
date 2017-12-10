@@ -34,24 +34,26 @@ class Arm
         vector<double> current_joint_positions;
         ros::Publisher pub;
         ros::Subscriber sub;
-        bool initialized;
-        bool ready;
+        bool initialized_;
+        bool ready_;
+        bool done_;
 
         // functions
         void joint_callback(const sensor_msgs::JointStateConstPtr& msg);
-        void execute_orders(baxter_core_msgs::JointCommand new_orders);
+        void init();
         void get_ready();
         bool is_positioned();
 
     public:
 
         // members
-        bool done;
         Gripper gripper;
 
         // functions
         Arm();
         Arm(ros::NodeHandle handle, bool arm_side); 
+        bool initialized() { return this->initialized_; };
+        bool done() { return this->done_; }
 	    void move_to(baxter_core_msgs::JointCommand new_order);
         void turn_wrist(float offset);
         void send_home(); 
