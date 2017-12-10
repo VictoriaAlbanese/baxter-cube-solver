@@ -217,26 +217,24 @@ Point SquareDetector::get_centroid(vector<Point> square)
 // gets the angle that the cube is rotated
 float SquareDetector::get_angular_offset() 
 {
-    while (this->squares.size() == 0) ros::spinOnce();
-
     float dx = this->squares[0][2].x - this->squares[0][0].x;
     float dy = this->squares[0][2].y - this->squares[0][0].y;
     
     return asin(dx / dy);
 }
-/*
+
 // GET X OFFSET FUNCTION
 // gets the offset in x of the cube's current position from its desired position
-float SquareDetector::get_x_offset(Point centroid) 
+float SquareDetector::get_x_offset() 
 {
-    return centroid.x - X_DESIRED;
+    return this->get_centroid(squares[0]).x - X_DESIRED;
 }
 
 // GET Y OFFSET FUNCTION
 // gets the offset in y of the cube's current position from its desired position
 float SquareDetector::get_y_offset() 
 {
-    return centroid.y - Y_DESIRED;
+    return this->get_centroid(squares[0]).y - Y_DESIRED;
 }
-*/
+
 ////////////////////////////////////////////////////////////////

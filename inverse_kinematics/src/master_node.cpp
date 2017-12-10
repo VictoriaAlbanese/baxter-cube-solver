@@ -13,7 +13,7 @@
 #include "square_detector_class.hpp"
 #include "face_display_class.hpp"
 
-enum State {INITIALIZE, OVER_CUBE, FIX_ORIENTATION, TEARDOWN, DONE};
+enum State {INITIALIZE, OVER_CUBE, FIX_ORIENTATION, FIX_POSITION, TEARDOWN, DONE};
 
 int main(int argc, char **argv)
 {
@@ -31,7 +31,7 @@ int main(int argc, char **argv)
     Arm right_arm(nh, RIGHT);
     IKS ik_solver(nh, RIGHT);
     SquareDetector detector(nh);
-    float offset;
+    float offset, offset_x, offset_y;
     int count = 0;
 
     // main program content
@@ -87,7 +87,7 @@ int main(int argc, char **argv)
                     }
 
                     break;
-    
+     
                 case FIX_ORIENTATION:
                    
                     // if no squares are detected, move out of the point cloud  
@@ -120,9 +120,32 @@ int main(int argc, char **argv)
                         { 
                             ROS_INFO("ORIENTATION FIXED...");
                             baxter.make_face(HAPPY);
-                            state = TEARDOWN;
+                            state = FIX_POSITION;
                             count = 0;
                         }
+                    }
+
+                    break;
+
+                case FIX_POSITION:
+                   
+                    // turn the wrist until cube is oriented correctly
+                    ROS_INFO("FIXING POSITION...");
+                    baxter.make_face(THINKING);
+                    if (fabs(offset_x) < 5)
+                    {
+                        offset_x = detector.get_x_offset();
+                        ROS_INFO("\tx offset is [%f]", offset_x);
+                        right_arm.adjust_endpoint_x(offset_x);
+                    }
+      
+                    // otherwise, move on to the next phase 
+                    else 
+                    { 
+                        ROS_INFO("POSITION FIXED...");
+                        baxter.make_face(HAPPY);
+                        state = TEARDOWN;
+                        count = 0;
                     }
 
                     break;

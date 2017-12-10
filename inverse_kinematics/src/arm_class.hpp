@@ -12,8 +12,12 @@
 #define ARM_CLASS_HPP
 
 #include "ros/ros.h"
+#include "baxter_core_msgs/EndpointState.h"
 #include "baxter_core_msgs/JointCommand.h"
+#include "geometry_msgs/Point.h"
+#include "geometry_msgs/Pose.h"
 #include "sensor_msgs/JointState.h"
+
 #include "gripper_class.hpp"
 
 #include <string>
@@ -32,14 +36,19 @@ class Arm
         bool arm_side;
         baxter_core_msgs::JointCommand orders;
         vector<double> current_joint_positions;
-        ros::Publisher pub;
-        ros::Subscriber sub;
-        bool initialized_;
+        geometry_msgs::Pose endpoint;
+        ros::Publisher order_pub;
+        ros::Publisher point_pub;
+        ros::Subscriber joint_sub;
+        ros::Subscriber point_sub;
+        bool joints_initialized;
+        bool point_initialized;
         bool ready_;
         bool done_;
 
         // functions
         void joint_callback(const sensor_msgs::JointStateConstPtr& msg);
+        void point_callback(const baxter_core_msgs::EndpointStateConstPtr& msg);
         void init();
         void get_ready();
         bool is_positioned();
@@ -52,9 +61,10 @@ class Arm
         // functions
         Arm();
         Arm(ros::NodeHandle handle, bool arm_side); 
-        bool initialized() { return this->initialized_; };
+        bool initialized() { return (this->joints_initialized && this->point_initialized); };
         bool done() { return this->done_; }
 	    void move_to(baxter_core_msgs::JointCommand new_order);
+        void adjust_endpoint_x(float offset);
         void turn_wrist(float offset);
         void send_home(); 
 };

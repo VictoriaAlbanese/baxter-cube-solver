@@ -58,8 +58,8 @@ class SquareDetector
         ~SquareDetector();
         int get_num_squares() { return this->squares.size(); }
         float get_angular_offset();
-        //float get_x_offset(Point centroid);
-        //float get_y_offset(Point centroid);
+        float get_x_offset();
+        float get_y_offset();
 };
 
 #endif // SQUARE_DETECTOR_CLASS_HPP

@@ -42,9 +42,15 @@ Arm::Arm(ros::NodeHandle handle, bool arm_side)
     string pub_topic;
     if (this->arm_side == LEFT) pub_topic = "/robot/limb/left/joint_command";
     else pub_topic = "/robot/limb/right/joint_command";
+
+    string sub_topic;
+    if (this->arm_side == LEFT) sub_topic = "/robot/limb/left/endpoint_state";
+    else sub_topic = "/robot/limb/right/endpoint_state";
    
-    this->pub = handle.advertise<baxter_core_msgs::JointCommand>(pub_topic, 10);
-    this->sub = handle.subscribe<sensor_msgs::JointState>("/robot/joint_states", 10, &Arm::joint_callback, this);
+    this->order_pub = handle.advertise<baxter_core_msgs::JointCommand>(pub_topic, 10);
+    this->point_pub = handle.advertise<geometry_msgs::Point>("goal_point", 10);
+    this->joint_sub = handle.subscribe<sensor_msgs::JointState>("/robot/joint_states", 10, &Arm::joint_callback, this);
+    this->point_sub = handle.subscribe<baxter_core_msgs::EndpointState>(sub_topic, 10, &Arm::point_callback, this);
 }
 
 // MOVE TO FUNCTION
@@ -73,6 +79,20 @@ void Arm::turn_wrist(float offset)
     }
 
     this->move_to(new_orders);
+}
+
+// ADJUST ENDPOINT FUNCTION
+// moves baxters arms slightly adjusting his x position over the cube 
+// by a tiny bit in a direction given by the offset until it is centered 
+void Arm::adjust_endpoint_x(float offset) 
+{
+    float increment = 0.02;
+    if (offset < 0) increment*= -1;
+
+    geometry_msgs::Point new_point = this->endpoint.position;
+    new_point.x+= increment;
+
+    this->point_pub.publish(new_point);
 }
 
 // SEND HOME
@@ -135,7 +155,7 @@ void Arm::send_home()
 // if not in accordance with the orders, publish commands
 void Arm::joint_callback(const sensor_msgs::JointStateConstPtr& msg) 
 {
-    this->initialized_ = true;
+    this->joints_initialized = true;
 
     this->current_joint_positions.clear();
     for (size_t i = 0; i < msg->position.size(); i++)
@@ -147,7 +167,7 @@ void Arm::joint_callback(const sensor_msgs::JointStateConstPtr& msg)
     if (this->ready_ && !this->is_positioned()) 
     {
         this->done_ = false;
-        this->pub.publish(this->orders);
+        this->order_pub.publish(this->orders);
     }
 
     else if (this->ready_ && this->is_positioned()) 
@@ -157,12 +177,31 @@ void Arm::joint_callback(const sensor_msgs::JointStateConstPtr& msg)
     }
 }
 
+// POINT CALLBACK FUNCTION
+// updates the current endpoint of the arm
+void Arm::point_callback(const baxter_core_msgs::EndpointStateConstPtr& msg) 
+{
+    this->point_initialized = true;
+    this->endpoint = msg->pose;
+
+    ROS_INFO("position: (%f, %f, %f)", 
+            this->endpoint.position.x,
+            this->endpoint.position.y,
+            this->endpoint.position.z);
+
+    ROS_INFO("orientation: (%f, %f, %f)", 
+            this->endpoint.orientation.x,
+            this->endpoint.orientation.y,
+            this->endpoint.orientation.z);
+}
+
 // INIT FUNCTION
 // common code in constructors
 // sets all bools to false
 void Arm::init() 
 {
-    this->initialized_ = false;
+    this->joints_initialized = false;
+    this->point_initialized = false;
     this->ready_ = false;
     this->done_ = false;
 }

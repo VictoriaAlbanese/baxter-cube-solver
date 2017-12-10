@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////
 //
 // Programmer: Victoria Albanese
 // Filename: iks_class.hpp
@@ -41,7 +41,9 @@ using std::string;
 class IKS 
 {
     private:
-	    bool arm_side;
+
+        // members
+        bool arm_side;
         Endpoint point;
         FaceDisplay baxter;
         ros::NodeHandle handle;
@@ -51,17 +53,18 @@ class IKS
         sensor_msgs::JointState solved_state;
         baxter_core_msgs::JointCommand orders;
 
+        // functions
+		void make_service_request(); 
+		void get_iks();
+        void iks_to_joint_command();
+        geometry_msgs::PoseStamped get_pose();
+        geometry_msgs::Quaternion get_orientation();
+
 	public:
 		IKS();
 		IKS(ros::NodeHandle handle, bool arm_side);
-        sensor_msgs::JointState get_solved_state() { return this->solved_state; };
         baxter_core_msgs::JointCommand get_orders();
-        void iks_to_joint_command();
-		void get_iks();
-		void make_service_request(); 
 		void kill_cloud();
-        geometry_msgs::PoseStamped get_pose();
-        geometry_msgs::Quaternion get_orientation();
 };
 
 #endif // IKS_CLASS_HPP
