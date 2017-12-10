@@ -15,23 +15,14 @@
 #include "baxter_core_msgs/JointCommand.h"
 #include "baxter_core_msgs/SolvePositionIK.h"
 #include "baxter_core_msgs/SolvePositionIKRequest.h"
-#include "geometry_msgs/PoseStamped.h"
-#include "geometry_msgs/Pose.h"
-#include "geometry_msgs/Point.h"
-#include "geometry_msgs/Quaternion.h"
 #include "sensor_msgs/JointState.h"
 #include "std_msgs/Bool.h"
-#include "std_msgs/Header.h"
 
 #include "endpoint_class.hpp"
 #include "face_display_class.hpp"
 
 #include <cstdlib>
 #include <string>
-
-#define ROLL 0
-#define PITCH 3.14
-#define YAW 0
 
 #define LEFT 0
 #define RIGHT 1
@@ -44,7 +35,7 @@ class IKS
 
         // members
         bool arm_side;
-        Endpoint point;
+        Endpoint endpoint;
         FaceDisplay baxter;
         ros::NodeHandle handle;
         ros::Publisher kill_pub;
@@ -57,11 +48,14 @@ class IKS
 		void make_service_request(); 
 		void get_iks();
         void iks_to_joint_command();
-        geometry_msgs::PoseStamped get_pose();
-        geometry_msgs::Quaternion get_orientation();
 
 	public:
-		IKS();
+
+        // members
+        // n/a
+
+        // functions
+        IKS();
 		IKS(ros::NodeHandle handle, bool arm_side);
         baxter_core_msgs::JointCommand get_orders();
 		void kill_cloud();

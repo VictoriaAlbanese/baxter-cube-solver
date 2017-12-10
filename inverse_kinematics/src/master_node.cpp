@@ -111,7 +111,7 @@ int main(int argc, char **argv)
                         if (fabs(offset * 180 / M_PI) < 55 || fabs(offset * 180 / M_PI) > 65)
                         {
                             offset = detector.get_angular_offset();
-                            //ROS_INFO("\toffset is [%f] rads or [%f] degs", offset, offset * 180 / M_PI);
+                            ROS_INFO("\toffset is [%f] rads or [%f] degs", offset, offset * 180 / M_PI);
                             right_arm.turn_wrist(offset);
                         }
       
@@ -120,15 +120,15 @@ int main(int argc, char **argv)
                         { 
                             ROS_INFO("ORIENTATION FIXED...");
                             baxter.make_face(HAPPY);
-                            state = FIX_POSITION;
+                            state = TEARDOWN;
                             count = 0;
                         }
                     }
 
                     break;
 
-                case FIX_POSITION:
-                   
+                /*case FIX_POSITION:
+                               
                     // turn the wrist until cube is oriented correctly
                     ROS_INFO("FIXING POSITION...");
                     baxter.make_face(THINKING);
@@ -148,7 +148,7 @@ int main(int argc, char **argv)
                         count = 0;
                     }
 
-                    break;
+                    break;*/
                 
                 case TEARDOWN:
                      

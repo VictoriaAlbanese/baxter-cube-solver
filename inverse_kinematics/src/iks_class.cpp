@@ -19,7 +19,7 @@
 IKS::IKS() 
 {
     this->arm_side = RIGHT;
-    this->point = Endpoint();
+    this->endpoint = Endpoint();
     this->baxter = FaceDisplay();
 }
 
@@ -45,7 +45,7 @@ IKS::IKS(ros::NodeHandle handle, bool arm_side)
 // then gets iks and returns orders to the arms to get there
 baxter_core_msgs::JointCommand IKS::get_orders() 
 {
-    this->point = Endpoint(this->handle);
+    this->endpoint = Endpoint(this->handle);
     
     this->make_service_request();
 	this->get_iks();
@@ -74,12 +74,8 @@ void IKS::kill_cloud()
 // Makes the service request by setting up the endpoint
 void IKS::make_service_request() 
 {
-    // Get the pose setup
-    geometry_msgs::PoseStamped pose = get_pose();
-
-    // Make the service request
     this->service.request.pose_stamp.resize(1);
-    this->service.request.pose_stamp[0] = pose;
+    this->service.request.pose_stamp[0] = this->endpoint.get_pose();
     this->service.request.seed_mode = 2;
 } 
 
@@ -106,9 +102,9 @@ void IKS::get_iks()
     this->baxter.make_face(HAPPY);
     ROS_INFO("\tinverse kinematic solution found");
  	ROS_INFO("\t(%f, %f, %f)", 
-	    this->point.point.x, 
-	    this->point.point.y, 
-	    this->point.point.z);
+	    this->endpoint.get_point().x, 
+	    this->endpoint.get_point().y, 
+	    this->endpoint.get_point().z);
     this->solved_state = this->service.response.joints[0];
 }
 
@@ -160,63 +156,6 @@ void IKS::iks_to_joint_command()
     }
 
     this->orders = msg;
-}
-
-// GET DESIRED POSE
-// Make the stamped_pose object
-geometry_msgs::PoseStamped IKS::get_pose() 
-{
-    // Make a header for the pose_stamped
-    std_msgs::Header header = std_msgs::Header();
-    header.stamp = ros::Time::now();
-    header.frame_id = "base";
-        
-    // Make the point for the pose
-    // Keep z at 0 plane always, fine tune later
-    geometry_msgs::Point new_point;
-    new_point.x = this->point.point.x; // + 0.05; 
-    new_point.y = this->point.point.y; // + 0.05;
-    new_point.z = 0.10;
-      
-    // Make the pose for the pose_stamped
-    geometry_msgs::Pose pose;
-    pose.position = new_point;
-    pose.orientation = get_orientation();
-
-    // Make the stamped pose
-    geometry_msgs::PoseStamped pose_stamped;
-    pose_stamped.header = header;
-    pose_stamped.pose = pose;
-
-    return pose_stamped;
-}
-
-// GET ORIENTATION
-// This function returns a quaternion that corresponds to an 
-// orientation where the grippers pointing straight down
-geometry_msgs::Quaternion IKS::get_orientation() 
-{ 
-    double mathc1 = cos(PITCH);
-    double maths1 = sin(PITCH);
-    double mathc2 = cos(YAW);
-    double maths2 = sin(YAW);
-    double mathc3 = cos(ROLL);
-    double maths3 = sin(ROLL);
-                                                                     
-    double oriw = sqrt(1.0 + mathc1 * mathc2 + mathc1 * mathc3 - maths1 * maths2 * maths3 + mathc2 * mathc3) / 2.0;
-    double oriw4 = (4.0 * oriw);
-        
-    double orix = (mathc2 * maths3 + mathc1 * maths3 + maths1 * maths2 * mathc3) / oriw4;
-    double oriy = (maths1 * mathc2 + maths1 * mathc3 + mathc1 * maths2 * maths3) / oriw4;
-    double oriz = (-maths1 * maths3 + mathc1 * maths2 * mathc3 + maths2) / oriw4;
-
-	geometry_msgs::Quaternion q;
-    q.x = orix;
-    q.y = oriy;
-    q.z = oriz;
-    q.w = oriw;
-
-    return q;    
 }
 
 //////////////////////////////////////////////////////////////

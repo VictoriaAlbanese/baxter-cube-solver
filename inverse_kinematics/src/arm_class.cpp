@@ -184,6 +184,7 @@ void Arm::point_callback(const baxter_core_msgs::EndpointStateConstPtr& msg)
     this->point_initialized = true;
     this->endpoint = msg->pose;
 
+    /*
     ROS_INFO("position: (%f, %f, %f)", 
             this->endpoint.position.x,
             this->endpoint.position.y,
@@ -193,6 +194,7 @@ void Arm::point_callback(const baxter_core_msgs::EndpointStateConstPtr& msg)
             this->endpoint.orientation.x,
             this->endpoint.orientation.y,
             this->endpoint.orientation.z);
+    */
 }
 
 // INIT FUNCTION
