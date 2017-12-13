@@ -43,13 +43,10 @@ class Gripper
 
     public:
 
-        // members
-        // n/a
-
         // functions
         Gripper();
         Gripper(ros::NodeHandle handle, bool arm_side); 
-        bool initialized() { return this->initialized_; }
+        bool initialized() { return this->initialized_; };
         bool calibrated() { return this->calibrated_; }
         bool ready() { return this->ready_; }
         bool gripping() { return this->gripping_; }

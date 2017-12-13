@@ -49,9 +49,6 @@ class SquareDetector
 
     public:
         
-        // members
-        // n/a
-        
         // functions
         SquareDetector();
         SquareDetector(ros::NodeHandle handle);

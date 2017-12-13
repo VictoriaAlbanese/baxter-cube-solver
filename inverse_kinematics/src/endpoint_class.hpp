@@ -40,15 +40,12 @@ class Endpoint
 
     public:
 
-        // members
-        // n/a
-
         // functions
         Endpoint();
         Endpoint(ros::NodeHandle handle); 
         geometry_msgs::PoseStamped get_pose() { return this->endpoint; }
         geometry_msgs::Point get_point() { return this->endpoint.pose.position; }
-        void set_position(geometry_msgs::Point point, float z_plane = 0.10);
+        void set_position(geometry_msgs::Point point, bool z_plane);
         void set_orientation(float YAW = 0.0);
 };
 

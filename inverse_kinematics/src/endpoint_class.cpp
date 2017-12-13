@@ -34,12 +34,14 @@ Endpoint::Endpoint(ros::NodeHandle handle)
 
 // SET POSITION FUNCTION
 // set the position aspect of the pose
-void Endpoint::set_position(geometry_msgs::Point point, float z_plane) 
+void Endpoint::set_position(geometry_msgs::Point point, bool z_plane) 
 {
     geometry_msgs::Point new_point;
     new_point.x = point.x; 
     new_point.y = point.y;
-    new_point.z = z_plane;
+
+    if (z_plane) new_point.z = 0.10;
+    else new_point.z = point.z;
       
     this->endpoint.pose.position = new_point;
 }
@@ -83,7 +85,10 @@ void Endpoint::callback(const geometry_msgs::Pose::ConstPtr& msg)
 {
     this->initialized = true;
     this->initialize_pose();
-    this->set_position(msg->position);
+
+    if (msg->position.z < -0.09 && msg->position.z != -0.14) this->set_position(msg->position, true);
+    else this->set_position(msg->position, false);
+
     this->set_orientation();
 }
 

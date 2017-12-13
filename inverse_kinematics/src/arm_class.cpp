@@ -17,27 +17,19 @@
 // DEFAULT CONSTRUCTOR
 // does not initialize ros
 // makes a right arm by default
-Arm::Arm() 
+Arm::Arm() : gripper() 
 {
     this->init();
     this->arm_side = RIGHT;
-
-    Gripper gripper;
-    this->gripper = gripper;
 }
 
 // CONSTRUCTOR
 // does the ros initialization and 
 // calibrates/opens the gripper if necessary 
-Arm::Arm(ros::NodeHandle handle, bool arm_side)
+Arm::Arm(ros::NodeHandle handle, bool arm_side) : gripper(handle, arm_side)
 {
     this->init();
     this->arm_side = arm_side;
-
-    Gripper gripper(handle, this->arm_side);
-    this->gripper = gripper; 
-    if (!this->gripper.calibrated()) this->gripper.calibrate();
-    this->gripper.release();
 
     string pub_topic;
     if (this->arm_side == LEFT) pub_topic = "/robot/limb/left/joint_command";
@@ -93,7 +85,6 @@ void Arm::adjust_endpoint_x(float offset)
     // movement in the "y direction" of the resulting image
     geometry_msgs::Pose new_pose = this->endpoint;
     new_pose.position.y+= increment;
-
     this->point_pub.publish(new_pose);
 }
 
@@ -109,18 +100,19 @@ void Arm::adjust_endpoint_y(float offset)
     // movement in the "y direction" of the resulting image
     geometry_msgs::Pose new_pose = this->endpoint;
     new_pose.position.x+= increment;
-
     this->point_pub.publish(new_pose);
 }
 
 // LOWER ARM FUNCTION
 // lowers baxter's arm a bit
-void Arm::lower_arm() 
+float Arm::lower_arm(bool do_it) 
 {
     geometry_msgs::Pose new_pose = this->endpoint;
-    new_pose.position.z-= 0.05;
-
+    if (do_it) new_pose.position.z = -0.14;
+    else new_pose.position.z-=0.05;
     this->point_pub.publish(new_pose);
+
+    return new_pose.position.z;
 }
 
 // SEND HOME

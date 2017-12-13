@@ -130,7 +130,7 @@ void SquareDetector::find_squares(Mat& image)
         
         // canny & dialate to get nice clean, big contours
         Canny(gray, dialated, 0, THRESH, 3);
-        dilate(dialated, dialated, Mat(), Point(-1,-1), 2);
+        dilate(dialated, dialated, Mat(), Point(-1,-1), 3);
         findContours(dialated, contours, RETR_LIST, CHAIN_APPROX_SIMPLE);
     
         // test each contour
@@ -211,8 +211,6 @@ Point SquareDetector::get_centroid(vector<Point> square)
 // gets the angle that the cube is rotated
 float SquareDetector::get_angular_offset() 
 {
-    while (this->squares.size() == 0) ros::spinOnce();
-        
     float dx = this->squares[0][2].x - this->squares[0][0].x;
     float dy = this->squares[0][2].y - this->squares[0][0].y;
     

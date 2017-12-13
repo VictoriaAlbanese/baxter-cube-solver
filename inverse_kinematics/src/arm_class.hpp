@@ -61,12 +61,12 @@ class Arm
         // functions
         Arm();
         Arm(ros::NodeHandle handle, bool arm_side); 
-        bool initialized() { return (this->joints_initialized && this->point_initialized); };
+        bool initialized() { return this->joints_initialized && this->point_initialized && this->gripper.initialized(); } 
         bool done() { return this->done_; }
 	    void move_to(baxter_core_msgs::JointCommand new_order);
         void adjust_endpoint_x(float offset);
         void adjust_endpoint_y(float offset);
-        void lower_arm();
+        float lower_arm(bool do_it = false);
         void turn_wrist(float offset);
         void send_home(); 
 };

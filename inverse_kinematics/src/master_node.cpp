@@ -17,9 +17,11 @@ enum State
 {
     INITIALIZE, 
     OVER_CUBE, 
+    CHECK_SQUARE,
     FIX_ORIENTATION, 
     FIX_POSITION, 
     LOWERING,
+    PICKUP,
     TEARDOWN, 
     DONE
 };
@@ -40,199 +42,249 @@ int main(int argc, char **argv)
     Arm right_arm(nh, RIGHT);
     IKS ik_solver(nh, RIGHT);
     SquareDetector detector(nh);
-    float offset, offset_x, offset_y;
+    float offset, offset_x, offset_y, offset_z = 0.1;
     int count = 0;
+    bool first = true;
 
     // main program content
     State state = INITIALIZE;
     while (ros::ok() && state != DONE) 
     {
-        // if everything is initialized, start doing the dirty
-        if (left_arm.initialized() && right_arm.initialized()) 
+        switch (state) 
         {
-            switch (state) 
-            {
-                case INITIALIZE:
-         
+            case INITIALIZE:
+ 
+                // if everything is initialized, start doing the dirty
+                if (left_arm.initialized() && right_arm.initialized()) 
+                {
     		        // if the arms are in position, move on
-                    if (left_arm.done() && right_arm.done() && count != 0) 
+                    if (left_arm.done() && right_arm.done() && !first && right_arm.gripper.ready()) 
                     {
                         ROS_INFO("ARMS RESET...");
                         state = OVER_CUBE;
-                        count = 0;
+                        first = true;
                     }
      
                     // otherwise, move the arms out of the way
-                    else if (count == 0) 
+                    else if (first) 
                     { 
                         ROS_INFO("RESETTING ARMS...");
                         left_arm.send_home();
                         right_arm.send_home();
-                        count++;
+                        if (!right_arm.gripper.calibrated()) right_arm.gripper.calibrate();
+                        right_arm.gripper.release();
+                        first = false;
                     }
-
-    	            break;
+                }
+    	        
+                break;
     
-                case OVER_CUBE:
+            case OVER_CUBE:
     
-                    // if we are hovering over the cube, move to the next stage
-                    if (left_arm.done() && right_arm.done() && count != 0) 
-                    {
-    		            ROS_INFO("ARM OVER CUBE...");
-                        baxter.make_face(HAPPY);
-                        state = FIX_ORIENTATION;
-                        count = 0;
-                    }
+                // if we are hovering over the cube, move to the next stage
+                if (left_arm.done() && right_arm.done() && !first) 
+                {
+    		        ROS_INFO("ARM OVER CUBE...");
+                    state = CHECK_SQUARE;
+                    first = true;
+                }
              
-                    // use the iks to move over the cube
-                    else if (count == 0) 
-                    {
-                        ROS_INFO("LOOKING FOR CUBE...");
-                        baxter.make_face(THINKING);
-                        right_arm.move_to(ik_solver.get_orders());
-                        ROS_INFO("MOVING ARM OVER CUBE...");
-                        ros::Duration(1.0).sleep();
-                        count++;
-                    }
+                // use the iks to move over the cube
+                else if (first) 
+                {
+                    ROS_INFO("LOOKING FOR CUBE...");
+                    baxter.make_face(THINKING);
+                    right_arm.move_to(ik_solver.get_orders());
+                    baxter.make_face(HAPPY);
+                    ROS_INFO("MOVING ARM OVER CUBE...");
+                    ros::Duration(1.0).sleep();
+                    first = false;
+                }
 
-                    break;
+                break;
      
-                case FIX_ORIENTATION:
-                   
-                    // if no squares are detected, move out of the point cloud  
-                    // attempt moving over the cube again
-                    if (detector.get_num_squares() == 0 && count == 0) 
-                    {
-                        ROS_INFO("NO SQUARES DETECTED, TRYING AGAIN...");
-                        baxter.make_face(SAD);
-                        state = INITIALIZE;
-                    } 
-    
-                    else 
-                    {
-                        // kill the cloud, no longer needed 
-                        ik_solver.kill_cloud();
-                        count++;
+            case CHECK_SQUARE:
+                
+                // if no squares are detected after 10 frames, move out of 
+                // the point cloud and make another attempt at moving over the cube 
+                if (detector.get_num_squares() == 0 && count == 20) 
+                {
+                    ROS_INFO("NO SQUARES DETECTED, TRYING AGAIN...");
+                    baxter.make_face(SAD);
+                    state = INITIALIZE;
+                    count = 0;
+                    first = true;
+                } 
+   
+                // otherwise, try again
+                else if (detector.get_num_squares() == 0 && count < 20) count++;
+                
+                // otherwise, kill the point cloud and move on
+                else 
+                {
+                    ROS_INFO("SQUARES DETECTED...");
+                    ik_solver.kill_cloud();
+                    baxter.make_face(HAPPY);
+                    state = FIX_ORIENTATION;
+                }
 
-                        // only do this stuff the first time we try and fix the orientation
-                        if (count == 1) 
-                        {
-                            ROS_INFO("FIXING ORIENTATION...");
-                            ROS_INFO("\tgoal offset is between 58 and 62 degrees");
-                            baxter.make_face(THINKING);
-                            offset = detector.get_angular_offset();
-                        }
-                        
-                        // turn the wrist until cube is oriented correctly
-                        if (fabs(offset * 180 / M_PI) < 58 || fabs(offset * 180 / M_PI) > 62)
-                        {
-                            offset = detector.get_angular_offset();
-                            ROS_INFO("\toffset is [%f] degrees", offset * 180 / M_PI);
-                            right_arm.turn_wrist(offset);
-                            count++;
-                        }
-      
-                        // otherwise, move on to the next phase 
-                        else 
-                        { 
-                            ROS_INFO("ORIENTATION FIXED...");
-                            baxter.make_face(HAPPY);
-                            state = FIX_POSITION;
-                            count = 0;
-                        }
+                break;
+
+            case FIX_ORIENTATION:
+               
+                // given that the squares appear
+                if (detector.get_num_squares() != 0) 
+                {
+                    // only do this stuff the first time we try and fix the orientation
+                    if (first) 
+                    {
+                        ROS_INFO("FIXING ORIENTATION...");
+                        ROS_INFO("\tgoal offset is between 58 and 62 degrees");
+                        baxter.make_face(THINKING);
+                        offset = detector.get_angular_offset();
+                        first = false;
                     }
+                            
+                    // turn the wrist until cube is oriented correctly
+                    if (fabs(offset * 180 / M_PI) < 58 || fabs(offset * 180 / M_PI) > 62)
+                    {
+                        offset = detector.get_angular_offset();
+                        ROS_INFO("\toffset is [%f] degrees", offset * 180 / M_PI);
+                        right_arm.turn_wrist(offset);
+                    }
+          
+                    // otherwise, move on to the next phase 
+                    else 
+                    { 
+                        ROS_INFO("ORIENTATION FIXED...");
+                        state = FIX_POSITION;
+                        first = true;
+                    }
+                }
 
-                    break;
+                break;
 
-                case FIX_POSITION:
-                               
+            case FIX_POSITION:
+                
+                // given that the squares appear
+                if (detector.get_num_squares() != 0) 
+                {
                     // adjust the endpoint until the cube is positioned correctly ...
-                    if (count == 0) 
+                    offset_x = detector.get_x_offset();
+                    offset_y = detector.get_y_offset();
+                    if (first) 
                     {
                         ROS_INFO("FIXING POSITION...");
                         ROS_INFO("\tgoal offset is within 10px in both directions");
-                        baxter.make_face(THINKING);
-                        offset_x = detector.get_x_offset();
-                        offset_y = detector.get_y_offset();
+                        first = false;
                     }
-
+                    ROS_INFO("\toffset is (%f, %f)", offset_x, offset_y);
+    
                     // ... in the x direction
                     if (fabs(offset_x) > 10)
                     {
                         offset_x = detector.get_x_offset();
-                        ROS_INFO("\tx offset is [%f]", offset_x);
                         right_arm.adjust_endpoint_x(offset_x);
                         right_arm.move_to(ik_solver.get_orders());
-                        count++;
                     }
-
+    
                     // ... in the y direction
                     else if (fabs(offset_y) > 10)
                     {
                         offset_y = detector.get_y_offset();
-                        ROS_INFO("\ty offset is [%f]", offset_y);
                         right_arm.adjust_endpoint_y(offset_y);
                         right_arm.move_to(ik_solver.get_orders());
-                        count++;
                     }
-      
+          
                     // otherwise, move on to the next phase 
                     else 
                     { 
                         ROS_INFO("POSITION FIXED...");
-                        baxter.make_face(HAPPY);
-                        state = TEARDOWN;
-                        count = 0;
+                        state = LOWERING;
+                        first = true;
                     }
+                }
 
-                    break;
+                break;
 
-                /*case LOWERING:
-    
+            case LOWERING:
+  
+                // arm is low enough, wait and move to done phase
+                if (offset_z < -0.06) 
+                {
+                    ROS_INFO("READY FOR PICKUP...");
+                    baxter.make_face(HAPPY);
+                    state = PICKUP;
+                    first = true;
+                }
+
+                else 
+                {
                     // if we are done lowering our arm, move to the next stage
-                    if (left_arm.done() && right_arm.done() && count != 0) 
+                    if (left_arm.done() && right_arm.done() && !first) 
                     {
                         ROS_INFO("ARM LOWERED...");
-                        baxter.make_face(HAPPY);
-                        state = TEARDOWN;
-                        count = 0;
+                        state = FIX_ORIENTATION;
+                        first = true;
                     }
-             
+                 
                     // use the iks to lower the arm a bit
-                    else if (count == 0) 
+                    else if (first) 
                     {
                         ROS_INFO("LOWERING ARM...");
-                        baxter.make_face(THINKING);
-                        right_arm.adjust_endpoint_x(offset_x);
+                        offset_z = right_arm.lower_arm();
                         right_arm.move_to(ik_solver.get_orders());
+                        ROS_INFO("\tz offset is [%f]", offset_z);
                         ros::Duration(1.0).sleep();
-                        count++;
+                        first = false;
                     }
-                                           
-                    break;*/
+                }
+
+                break;
+             
+            case PICKUP:
                 
-                case TEARDOWN:
-                     
-    		        // if the arms are in position, move on
-                    if (left_arm.done() && right_arm.done() && count != 0) 
-                    {
-                        ROS_INFO("ARMS RESET...");
-                        state = DONE;
-                        count = 0;
-                    }
+    	        // if the arms are in position, move on
+                if (left_arm.done() && right_arm.done() && !first) 
+                {
+                    right_arm.gripper.grip();
+                    ROS_INFO("CUBE GRABBED...");
+                    ros::Duration(10.0).sleep();
+                    state = TEARDOWN;
+                    first = true;
+                }
      
-                    // otherwise, move the arms out of the way
-                    else if (count == 0) 
-                    { 
-                        ROS_INFO("RESETTING ARMS...");
-                        left_arm.send_home();
-                        right_arm.send_home();
-                        count++;
-                    }
+                // otherwise, move the arms out of the way
+                else if (first) 
+                { 
+                    ROS_INFO("GRABBING CUBE...");
+                    offset_z = right_arm.lower_arm(true);
+                    right_arm.move_to(ik_solver.get_orders());
+                    first = false;
+                }
 
-    	            break;
-            }
+                break;
 
+            case TEARDOWN:
+                    
+    	        // if the arms are in position, move on
+                if (left_arm.done() && right_arm.done() && !first) 
+                {
+                    ROS_INFO("ARMS RESET...");
+                    state = DONE;
+                    first = true;
+                }
+     
+                // otherwise, move the arms out of the way
+                else if (first) 
+                { 
+                    ROS_INFO("RESETTING ARMS...");
+                    left_arm.send_home();
+                    right_arm.send_home();
+                    first = false;
+                }
+
+             break;
         }
 
         // spin & sleep

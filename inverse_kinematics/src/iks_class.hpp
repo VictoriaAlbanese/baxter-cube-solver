@@ -51,9 +51,6 @@ class IKS
 
 	public:
 
-        // members
-        // n/a
-
         // functions
         IKS();
 		IKS(ros::NodeHandle handle, bool arm_side);

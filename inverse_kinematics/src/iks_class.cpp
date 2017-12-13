@@ -99,12 +99,14 @@ void IKS::get_iks()
         exit(1);
     }
 
-    this->baxter.make_face(HAPPY);
+    /*
     ROS_INFO("\tinverse kinematic solution found");
  	ROS_INFO("\t(%f, %f, %f)", 
 	    this->endpoint.get_point().x, 
 	    this->endpoint.get_point().y, 
 	    this->endpoint.get_point().z);
+    */
+
     this->solved_state = this->service.response.joints[0];
 }
 
