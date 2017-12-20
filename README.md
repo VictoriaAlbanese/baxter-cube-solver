@@ -6,7 +6,6 @@ Baxter successfully moves his arm over the cube, makes adjustments, and then pic
 
    - adjust initial height
    - make square-finding algorithm more robust
-   - decrease sparcity of voxel filter
    - restrict area looked at by point cloud
    - clean up classes
    - refactor main
