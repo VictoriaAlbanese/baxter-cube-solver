@@ -4,7 +4,6 @@ This repo will hold all of the material related to my honors project, where I wi
 ## Current Work
 Baxter successfully moves his arm over the cube, makes adjustments, and then picks up the cube in many different positions.  Next steps are to fix bugs in the functionality, improve the robustness of the square finding algorithm, and clean up/refactor the existing code.
 
-   - fix orentation re-zeroing issue
    - adjust initial height
    - make square-finding algorithm more robust
    - decrease sparcity of voxel filter
