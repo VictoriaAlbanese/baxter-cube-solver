@@ -19,7 +19,7 @@
 Cloud::Cloud() 
 {
     this->initialized = false;
-    this->done = false;
+    this->done_ = false;
 }
 
 // CONSTRUCTOR
@@ -27,7 +27,7 @@ Cloud::Cloud()
 Cloud::Cloud(ros::NodeHandle handle) 
 {
     this->initialized = false;
-    this->done = false;
+    this->done_ = false;
 
     this->point_pub = handle.advertise<geometry_msgs::Pose>("goal_point", 10);
     this->cloud_pub = handle.advertise<sensor_msgs::PointCloud2>("filtered_cloud", 10);
@@ -35,16 +35,6 @@ Cloud::Cloud(ros::NodeHandle handle)
 	this->kill_sub = handle.subscribe("kill_cloud", 1, &Cloud::kill_callback, this);
 
     while (!this->initialized) ros::spinOnce();
-}
-
-// GET REFINED CLOUD
-// removes outliers & performs a voxel filter 
-// on the cloud, then publishes the refined cloud
-void Cloud::get_refined_cloud() 
-{
-    this->remove_outliers();
-    this->voxel_filter();
-    this->cloud_pub.publish(this->cloud);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -69,7 +59,24 @@ void Cloud::cloud_callback(const sensor_msgs::PointCloud2ConstPtr& msg)
 void Cloud::kill_callback(const std_msgs::Bool& msg) 
 {
     //ROS_INFO("Goodbye, cold cruel world... *dies*");
-    this->done = msg.data;
+    this->done_ = msg.data;
+}
+
+// GET REFINED CLOUD
+// removes outliers & performs a voxel filter 
+// on the cloud, then publishes the refined cloud
+void Cloud::get_refined_cloud() 
+{
+	PointCloud<PointXYZ> point_cloud;
+	fromROSMsg(this->cloud, point_cloud);
+	point_cloud = rotate_points(point_cloud, -0.94);
+    point_cloud = passthrough_filter(point_cloud);
+	point_cloud = rotate_points(point_cloud, 0.94);
+    toROSMsg(point_cloud, this->cloud);
+
+    this->remove_outliers();
+    this->voxel_filter();
+    this->cloud_pub.publish(this->cloud);
 }
 
 // SET HIGHEST POINT FUNCTION
@@ -116,8 +123,10 @@ void Cloud::set_highest_point()
     this->listener.transformPoint("/base", p_in, p_out);
 
     // Set & print the point
-	ROS_INFO("\tcube found in pcl as point");
-    ROS_INFO("\t%d (%f, %f, %f)", index, p_out.point.x, p_out.point.y, p_out.point.z);
+	ROS_INFO("\tcube found in pcl as point %d(%f, %f, %f)", index, p_out.point.x, p_out.point.y, p_out.point.z);
+    p_out.point.x+= 0.05;
+    p_out.point.z = 0.10;
+	ROS_INFO("\tpublishing edited point (%f, %f, %f)", p_out.point.x, p_out.point.y, p_out.point.z);
 	this->highest_point = p_out.point;
 
     // Publish the pose
@@ -125,6 +134,54 @@ void Cloud::set_highest_point()
     pose.position = this->highest_point;
     pose.orientation = this->initialize_orientation();
     this->point_pub.publish(pose);
+}
+
+// ROTATE POINTS FUNCTION
+// hacky way to transform the points 
+// by a certain amount without the transform
+PointCloud<PointXYZ> Cloud::rotate_points(PointCloud<PointXYZ> old_cloud, float theta) 
+{
+  	Eigen::Affine3f transform_2 = Eigen::Affine3f::Identity();
+  	transform_2.rotate(Eigen::AngleAxisf(theta, Eigen::Vector3f::UnitX()));
+
+  	PointCloud<PointXYZ>::Ptr transformed_cloud(new PointCloud<PointXYZ>());
+  	transformPointCloud(old_cloud, *transformed_cloud, transform_2);
+
+	return *transformed_cloud;
+}
+
+// PASSTHROUGH FUNCTION
+// removes all points not within a 
+// specified volume in the point cloud
+PointCloud<PointXYZ> Cloud::passthrough_filter(PointCloud<PointXYZ> input_cloud) 
+{
+    // variable declarations
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
+    *cloud = input_cloud;
+ 
+    // do the filtering on the x (left-right in reference to baxter)
+    pcl::PassThrough<pcl::PointXYZ> x_pass;
+    x_pass.setInputCloud (cloud);
+    x_pass.setFilterFieldName ("x");
+    x_pass.setFilterLimits (-1.0, 1.0);
+    x_pass.filter (*cloud_filtered);
+ 
+    // do the filtering on the y (up-down in reference to baxter)
+    pcl::PassThrough<pcl::PointXYZ> y_pass;
+    y_pass.setInputCloud (cloud_filtered);
+    y_pass.setFilterFieldName ("y");
+    y_pass.setFilterLimits (0.25, 0.75);
+    y_pass.filter (*cloud_filtered);
+
+    // do the filtering on the z (close-far in reference to baxter)
+    pcl::PassThrough<pcl::PointXYZ> z_pass;
+    z_pass.setInputCloud (cloud_filtered);
+    z_pass.setFilterFieldName ("z");
+    z_pass.setFilterLimits (0.0, 1.0);
+    z_pass.filter (*cloud_filtered);
+ 
+    return *cloud_filtered;
 }
 
 // REMOVE OUTLIERS FUNCTION
@@ -163,7 +220,7 @@ void Cloud::voxel_filter()
 
 	VoxelGrid<PCLPointCloud2> sor;
 	sor.setInputCloud(cloud_ptr);
-	sor.setLeafSize(0.1, 0.1, 0.1); // 10cm grid?
+	sor.setLeafSize(0.05, 0.05, 0.05); // 5cm grid
 	sor.filter(filtered_cloud);
 
 	sensor_msgs::PointCloud2 output_cloud;
@@ -172,44 +229,16 @@ void Cloud::voxel_filter()
 	this->cloud = output_cloud;
 }
 
-// ROTATE POINTS FUNCTION
-// hacky way to transform the points 
-// by a certain amount without the transform
-PointCloud<PointXYZ> Cloud::rotate_points(PointCloud<PointXYZ> old_cloud, float theta) 
-{
-  	Eigen::Affine3f transform_2 = Eigen::Affine3f::Identity();
-  	transform_2.rotate(Eigen::AngleAxisf(theta, Eigen::Vector3f::UnitX()));
-
-  	PointCloud<PointXYZ>::Ptr transformed_cloud(new PointCloud<PointXYZ>());
-  	transformPointCloud(old_cloud, *transformed_cloud, transform_2);
-
-	return *transformed_cloud;
-}
-
 // INITIALIZE ORIENTATION
 // initialize the orientation aspect of the pose
 // such that the grippers are pointing straight down
-geometry_msgs::Quaternion Cloud::initialize_orientation() {
-
-    double mathc1 = cos(PITCH);
-    double maths1 = sin(PITCH);
-    double mathc2 = cos(YAW);
-    double maths2 = sin(YAW);
-    double mathc3 = cos(ROLL);
-    double maths3 = sin(ROLL);
-                                                                     
-    double oriw = sqrt(1.0 + mathc1 * mathc2 + mathc1 * mathc3 - maths1 * maths2 * maths3 + mathc2 * mathc3) / 2.0;
-    double oriw4 = (4.0 * oriw);
-        
-    double orix = (mathc2 * maths3 + mathc1 * maths3 + maths1 * maths2 * mathc3) / oriw4;
-    double oriy = (maths1 * mathc2 + maths1 * mathc3 + mathc1 * maths2 * maths3) / oriw4;
-    double oriz = (-maths1 * maths3 + mathc1 * maths2 * mathc3 + maths2) / oriw4;
-
+geometry_msgs::Quaternion Cloud::initialize_orientation() 
+{
 	geometry_msgs::Quaternion q;
-    q.x = orix;
-    q.y = oriy;
-    q.z = oriz;
-    q.w = oriw;
+    q.x = 0.0;
+    q.y = 1.0;
+    q.z = 0.0;
+    q.w = 0.0;
 
     return q;
 }

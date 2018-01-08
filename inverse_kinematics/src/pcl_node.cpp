@@ -19,7 +19,7 @@ int main(int argc, char ** argv)
     Cloud cloud(nh);
 
     // Spin while the cloud is still needed
-    while (ros::ok() && !cloud.done) ros::spinOnce();    
+    while (ros::ok() && !cloud.done()) ros::spinOnce();    
 }
 
 ////////////////////////////////////////////////////////////////

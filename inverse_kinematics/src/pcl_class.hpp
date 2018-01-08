@@ -18,8 +18,9 @@
 #include "geometry_msgs/Point.h"
 #include "geometry_msgs/Pose.h"
 #include "pcl/common/transforms.h"
-#include "pcl/filters/voxel_grid.h"
+#include "pcl/filters/passthrough.h"
 #include "pcl/filters/statistical_outlier_removal.h"
+#include "pcl/filters/voxel_grid.h"
 #include "pcl/point_cloud.h"
 #include "pcl/point_types.h"
 #include "pcl_conversions/pcl_conversions.h"
@@ -29,10 +30,6 @@
 #include "std_msgs/Bool.h"
 #include "tf/transform_listener.h"
 
-#define ROLL 0
-#define PITCH 3.14
-#define YAW 0
-
 using namespace pcl;
 
 class Cloud 
@@ -41,6 +38,7 @@ class Cloud
 
         // members
         bool initialized;
+        bool done_;
         sensor_msgs::PointCloud2 cloud;
         ros::Publisher point_pub;
         ros::Publisher cloud_pub;
@@ -51,9 +49,11 @@ class Cloud
         // functions
         void cloud_callback(const sensor_msgs::PointCloud2ConstPtr& msg);
         void kill_callback(const std_msgs::Bool& msg);
+        void get_refined_cloud();
+        void set_highest_point();
         void remove_outliers();
         void voxel_filter();
-        void set_highest_point();
+        PointCloud<PointXYZ> passthrough_filter(PointCloud<PointXYZ> input_cloud);
         PointCloud<PointXYZ> rotate_points(PointCloud<PointXYZ> old_cloud, float theta);
         geometry_msgs::Quaternion initialize_orientation();
 
@@ -61,12 +61,11 @@ class Cloud
 
         // members
         geometry_msgs::Point highest_point;
-        bool done;
 
         // functions
         Cloud();
         Cloud(ros::NodeHandle handle);
-        void get_refined_cloud();
+        bool done() { return this->done_; }
 };
 
 #endif // PCL_CLASS_HPP

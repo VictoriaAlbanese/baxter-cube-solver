@@ -34,9 +34,6 @@ class Endpoint
         void callback(const geometry_msgs::Pose::ConstPtr& msg);
         void init();
         void initialize_pose();
-        std_msgs::Header initialize_header();
-        geometry_msgs::Point initialize_position();
-        geometry_msgs::Quaternion initialize_orientation();
 
     public:
 
@@ -45,8 +42,6 @@ class Endpoint
         Endpoint(ros::NodeHandle handle); 
         geometry_msgs::PoseStamped get_pose() { return this->endpoint; }
         geometry_msgs::Point get_point() { return this->endpoint.pose.position; }
-        void set_position(geometry_msgs::Point point, bool z_plane);
-        void set_orientation(float YAW = 0.0);
 };
 
 #endif // ENDPOINT_CLASS_HPP

@@ -32,48 +32,6 @@ Endpoint::Endpoint(ros::NodeHandle handle)
     while (!this->initialized) ros::spinOnce();
 }
 
-// SET POSITION FUNCTION
-// set the position aspect of the pose
-void Endpoint::set_position(geometry_msgs::Point point, bool z_plane) 
-{
-    geometry_msgs::Point new_point;
-    new_point.x = point.x; 
-    new_point.y = point.y;
-
-    if (z_plane) new_point.z = 0.10;
-    else new_point.z = point.z;
-      
-    this->endpoint.pose.position = new_point;
-}
-
-// SET ORIENTATION
-// sets the orientation aspect of the pose
-// such that the grippers are pointing straight down
-void Endpoint::set_orientation(float YAW) 
-{ 
-    double mathc1 = cos(PITCH);
-    double maths1 = sin(PITCH);
-    double mathc2 = cos(YAW);
-    double maths2 = sin(YAW);
-    double mathc3 = cos(ROLL);
-    double maths3 = sin(ROLL);
-                                                                     
-    double oriw = sqrt(1.0 + mathc1 * mathc2 + mathc1 * mathc3 - maths1 * maths2 * maths3 + mathc2 * mathc3) / 2.0;
-    double oriw4 = (4.0 * oriw);
-        
-    double orix = (mathc2 * maths3 + mathc1 * maths3 + maths1 * maths2 * mathc3) / oriw4;
-    double oriy = (maths1 * mathc2 + maths1 * mathc3 + mathc1 * maths2 * maths3) / oriw4;
-    double oriz = (-maths1 * maths3 + mathc1 * maths2 * mathc3 + maths2) / oriw4;
-
-	geometry_msgs::Quaternion q;
-    q.x = orix;
-    q.y = oriy;
-    q.z = oriz;
-    q.w = oriw;
-
-    this->endpoint.pose.orientation = q;
-}
-
 //////////////////////////////////////////////////////////////
 
 // Private Members & Callbacks
@@ -85,11 +43,7 @@ void Endpoint::callback(const geometry_msgs::Pose::ConstPtr& msg)
 {
     this->initialized = true;
     this->initialize_pose();
-
-    if (msg->position.z < -0.09 && msg->position.z != -0.14) this->set_position(msg->position, true);
-    else this->set_position(msg->position, false);
-
-    this->set_orientation();
+    this->endpoint.pose = *msg;
 }
 
 // INIT FUNCTION
@@ -105,68 +59,24 @@ void Endpoint::init()
 // initialize the endpoint
 void Endpoint::initialize_pose() 
 {
-    geometry_msgs::Pose pose;
-    pose.position = this->initialize_position();
-    pose.orientation = this->initialize_orientation();
-
-    geometry_msgs::PoseStamped pose_stamped;
-    pose_stamped.header = this->initialize_header();
-    pose_stamped.pose = pose;
-
-    this->endpoint = pose_stamped;
-}
-
-// INITIALIZE HEADER FUNCTION
-// initialize the header of the pose stamped object
-std_msgs::Header Endpoint::initialize_header() 
-{
     std_msgs::Header header = std_msgs::Header();
     header.stamp = ros::Time::now();
     header.frame_id = "base";
-        
-    return header;
-}
 
-// INITIALIZE POSITION FUNCTION
-// initialize the position aspect of the pose
-geometry_msgs::Point Endpoint::initialize_position() 
-{
-    geometry_msgs::Point new_point;
-    new_point.x = -1; 
-    new_point.y = -1;
-    new_point.z = -1;
-      
-    return new_point;
-}
+    geometry_msgs::Pose pose;
+    pose.position.x = -1.0;
+    pose.position.y = -1.0;
+    pose.position.z = -1.0;
+    pose.orientation.x = 0.0;
+    pose.orientation.y = 1.0;
+    pose.orientation.z = 0.0;
+    pose.orientation.w = 0.0;
 
-// INITIALIZE ORIENTATION
-// initialize the orientation aspect of the pose
-// such that the grippers are pointing straight down
-geometry_msgs::Quaternion Endpoint::initialize_orientation() 
-{ 
-    float YAW = 0.0;
+    geometry_msgs::PoseStamped ps;
+    ps.header = header;
+    ps.pose = pose;
 
-    double mathc1 = cos(PITCH);
-    double maths1 = sin(PITCH);
-    double mathc2 = cos(YAW);
-    double maths2 = sin(YAW);
-    double mathc3 = cos(ROLL);
-    double maths3 = sin(ROLL);
-                                                                     
-    double oriw = sqrt(1.0 + mathc1 * mathc2 + mathc1 * mathc3 - maths1 * maths2 * maths3 + mathc2 * mathc3) / 2.0;
-    double oriw4 = (4.0 * oriw);
-        
-    double orix = (mathc2 * maths3 + mathc1 * maths3 + maths1 * maths2 * mathc3) / oriw4;
-    double oriy = (maths1 * mathc2 + maths1 * mathc3 + mathc1 * maths2 * maths3) / oriw4;
-    double oriz = (-maths1 * maths3 + mathc1 * maths2 * mathc3 + maths2) / oriw4;
-
-	geometry_msgs::Quaternion q;
-    q.x = orix;
-    q.y = oriy;
-    q.z = oriz;
-    q.w = oriw;
-
-    return q;
+    this->endpoint = ps;
 }
 
 //////////////////////////////////////////////////////////////

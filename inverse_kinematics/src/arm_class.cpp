@@ -109,7 +109,7 @@ float Arm::lower_arm(bool do_it)
 {
     geometry_msgs::Pose new_pose = this->endpoint;
     if (do_it) new_pose.position.z = -0.14;
-    else new_pose.position.z-=0.05;
+    else new_pose.position.z-= 0.05;
     this->point_pub.publish(new_pose);
 
     return new_pose.position.z;
