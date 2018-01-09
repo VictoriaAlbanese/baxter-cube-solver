@@ -40,7 +40,7 @@ Arm::Arm(ros::NodeHandle handle, bool arm_side) : gripper(handle, arm_side)
     else sub_topic = "/robot/limb/right/endpoint_state";
    
     this->order_pub = handle.advertise<baxter_core_msgs::JointCommand>(pub_topic, 10);
-    this->point_pub = handle.advertise<geometry_msgs::Pose>("goal_point", 10);
+    this->point_pub = handle.advertise<geometry_msgs::Pose>("goal_point", 10, true);
     this->joint_sub = handle.subscribe<sensor_msgs::JointState>("/robot/joint_states", 10, &Arm::joint_callback, this);
     this->point_sub = handle.subscribe<baxter_core_msgs::EndpointState>(sub_topic, 10, &Arm::point_callback, this);
 }
@@ -86,6 +86,11 @@ void Arm::adjust_endpoint_x(float offset)
     geometry_msgs::Pose new_pose = this->endpoint;
     new_pose.position.y+= increment;
     this->point_pub.publish(new_pose);
+
+    ROS_INFO("(%f, %f, %f)", 
+            new_pose.position.x,
+            new_pose.position.y,
+            new_pose.position.z);
 }
 
 // ADJUST ENDPOINT Y FUNCTION

@@ -46,7 +46,7 @@ IKS::IKS(ros::NodeHandle handle, bool arm_side)
 baxter_core_msgs::JointCommand IKS::get_orders() 
 {
     this->endpoint = Endpoint(this->handle);
-   
+    
     this->make_service_request();
 	this->get_iks();
     this->iks_to_joint_command();
@@ -99,13 +99,13 @@ void IKS::get_iks()
         exit(1);
     }
 
-    /*
+    
     ROS_INFO("\tinverse kinematic solution found");
  	ROS_INFO("\t(%f, %f, %f)", 
 	    this->endpoint.get_point().x, 
 	    this->endpoint.get_point().y, 
 	    this->endpoint.get_point().z);
-    */
+    
 
     this->solved_state = this->service.response.joints[0];
 }

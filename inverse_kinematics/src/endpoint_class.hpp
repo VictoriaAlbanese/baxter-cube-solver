@@ -26,7 +26,7 @@ class Endpoint
     private: 
 
         // members
-        bool initialized;
+        bool initialized_;
         geometry_msgs::PoseStamped endpoint;
         ros::Subscriber sub;
 
@@ -40,6 +40,7 @@ class Endpoint
         // functions
         Endpoint();
         Endpoint(ros::NodeHandle handle); 
+        bool initialized() { return initialized_; }
         geometry_msgs::PoseStamped get_pose() { return this->endpoint; }
         geometry_msgs::Point get_point() { return this->endpoint.pose.position; }
 };
