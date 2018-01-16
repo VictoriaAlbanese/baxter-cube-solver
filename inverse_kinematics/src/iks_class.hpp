@@ -55,7 +55,9 @@ class IKS
         IKS();
 		IKS(ros::NodeHandle handle, bool arm_side);
         bool initialized() { return this->endpoint.initialized(); }
+        void uninitialize() { this->endpoint.uninitialize();}
         baxter_core_msgs::JointCommand get_orders();
+        bool create_orders();
 		void kill_cloud();
 };
 

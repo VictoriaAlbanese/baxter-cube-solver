@@ -40,7 +40,7 @@ Arm::Arm(ros::NodeHandle handle, bool arm_side) : gripper(handle, arm_side)
     else sub_topic = "/robot/limb/right/endpoint_state";
    
     this->order_pub = handle.advertise<baxter_core_msgs::JointCommand>(pub_topic, 10);
-    this->point_pub = handle.advertise<geometry_msgs::Pose>("goal_point", 10, true);
+    this->point_pub = handle.advertise<geometry_msgs::Pose>("goal_point", 10);
     this->joint_sub = handle.subscribe<sensor_msgs::JointState>("/robot/joint_states", 10, &Arm::joint_callback, this);
     this->point_sub = handle.subscribe<baxter_core_msgs::EndpointState>(sub_topic, 10, &Arm::point_callback, this);
 }
@@ -86,11 +86,6 @@ void Arm::adjust_endpoint_x(float offset)
     geometry_msgs::Pose new_pose = this->endpoint;
     new_pose.position.y+= increment;
     this->point_pub.publish(new_pose);
-
-    ROS_INFO("(%f, %f, %f)", 
-            new_pose.position.x,
-            new_pose.position.y,
-            new_pose.position.z);
 }
 
 // ADJUST ENDPOINT Y FUNCTION
@@ -110,14 +105,24 @@ void Arm::adjust_endpoint_y(float offset)
 
 // LOWER ARM FUNCTION
 // lowers baxter's arm a bit
-float Arm::lower_arm(bool do_it) 
+void Arm::lower_arm() 
 {
+    float positions[4] = { 0.1, 0.0, -0.07, -0.14 };
     geometry_msgs::Pose new_pose = this->endpoint;
-    if (do_it) new_pose.position.z = -0.14;
-    else new_pose.position.z-= 0.05;
-    this->point_pub.publish(new_pose);
+      
+    if (fabs(new_pose.position.z - positions[0]) < fabs(new_pose.position.z - positions[1])
+     && fabs(new_pose.position.z - positions[0]) < fabs(new_pose.position.z - positions[2])
+     && fabs(new_pose.position.z - positions[0]) < fabs(new_pose.position.z - positions[3]))
+        new_pose.position.z = positions[1];
 
-    return new_pose.position.z;
+    else if (fabs(new_pose.position.z - positions[1]) < fabs(new_pose.position.z - positions[0])
+          && fabs(new_pose.position.z - positions[1]) < fabs(new_pose.position.z - positions[2])
+          && fabs(new_pose.position.z - positions[1]) < fabs(new_pose.position.z - positions[3]))
+        new_pose.position.z = positions[2];
+
+    else new_pose.position.z = positions[3];
+        
+    this->point_pub.publish(new_pose);
 }
 
 // SEND HOME

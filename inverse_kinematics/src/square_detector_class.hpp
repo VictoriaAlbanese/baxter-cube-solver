@@ -20,8 +20,8 @@
 #include <sensor_msgs/image_encodings.h>
 
 #define THRESH 50
-#define X_DESIRED 360
-#define Y_DESIRED 135
+#define X_DESIRED 375
+#define Y_DESIRED 150
 #define WINDOW_NAME "Image Window"
 
 using namespace cv;
@@ -43,9 +43,9 @@ class SquareDetector
         void callback(const sensor_msgs::ImageConstPtr& msg);
         void find_squares(Mat& image);
         void draw_squares(Mat& image);
+        int get_biggest_square();
         double angle(Point pt1, Point pt2, Point pt0);
         Point get_centroid(vector<Point> square);
-
 
     public:
         

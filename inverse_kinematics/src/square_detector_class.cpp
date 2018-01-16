@@ -190,6 +190,29 @@ void SquareDetector::draw_squares(Mat& image)
     imshow(WINDOW_NAME, image);
 }
 
+// GET BIGGEST SQUARE
+// returns the square in the list with the longest diagonal
+int SquareDetector::get_biggest_square() 
+{
+    int biggest_diagonal = -1;
+    int biggest_square;
+
+    for (size_t i = 0; i < this->squares.size(); i++)
+    {
+        int a = abs(this->squares[i][0].x - this->squares[i][2].x);
+        int b = abs(this->squares[i][0].y - this->squares[i][2].y);
+        int c = sqrt((a * a) + (b * b));
+        
+        if (c > biggest_diagonal) 
+        {
+            biggest_diagonal = c;
+            biggest_square = i;
+        }
+    }
+
+    return biggest_square;
+}
+
 // GET CENTROID FUNCTION
 // gets the centroid of the passed square
 Point SquareDetector::get_centroid(vector<Point> square) 
@@ -212,24 +235,28 @@ Point SquareDetector::get_centroid(vector<Point> square)
 // gets the angle that the cube is rotated
 float SquareDetector::get_angular_offset() 
 {
-    float dx = this->squares[0][2].x - this->squares[0][0].x;
-    float dy = this->squares[0][2].y - this->squares[0][0].y;
-    
-    return asin(dx / dy);
+    int biggest = this->get_biggest_square();
+
+    float dx = this->squares[biggest][2].x - this->squares[biggest][0].x;
+    float dy = this->squares[biggest][2].y - this->squares[biggest][0].y;
+
+    return asin(dx / dy) * 180.0 / M_PI;
 }
 
 // GET X OFFSET FUNCTION
 // gets the offset in x of the cube's current position from its desired position
 float SquareDetector::get_x_offset() 
 {
-    return this->get_centroid(squares[0]).x - X_DESIRED;
+    int biggest = this->get_biggest_square();
+    return this->get_centroid(squares[biggest]).x - X_DESIRED;
 }
 
 // GET Y OFFSET FUNCTION
 // gets the offset in y of the cube's current position from its desired position
 float SquareDetector::get_y_offset() 
 {
-    return this->get_centroid(squares[0]).y - Y_DESIRED;
+    int biggest = this->get_biggest_square();
+    return this->get_centroid(squares[biggest]).y - Y_DESIRED;
 }
 
 ////////////////////////////////////////////////////////////////

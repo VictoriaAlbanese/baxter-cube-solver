@@ -25,7 +25,7 @@ IKS::IKS()
 
 // ONE ARGUMENT CONSTRUCTOR
 // Wait for an endpoint and then get the iks
-IKS::IKS(ros::NodeHandle handle, bool arm_side) 
+IKS::IKS(ros::NodeHandle handle, bool arm_side) : endpoint(handle)
 {
     this->handle = handle;
 
@@ -40,18 +40,30 @@ IKS::IKS(ros::NodeHandle handle, bool arm_side)
     this->kill_pub = handle.advertise<std_msgs::Bool>("kill_cloud", 10);
 }
 
-// GET ORDERS FUNCTION
-// waits for the endpoint to be initialized
-// then gets iks and returns orders to the arms to get there
+// CREATE ORDERS FUNCTION
+// when endpoint is initialized, it gets the iks and sets orders
+// returns true only if the endpoint got initialized
+bool IKS::create_orders() 
+{
+    if (this->initialized()) 
+    {
+        this->make_service_request();
+	    this->get_iks();
+        this->iks_to_joint_command();
+
+        return true;
+    }
+
+    else return false;
+}
+
+// GET ORDERS
+// returns the current orders and resets 
+// the endpoint to be uninitialized
 baxter_core_msgs::JointCommand IKS::get_orders() 
 {
-    this->endpoint = Endpoint(this->handle);
-    
-    this->make_service_request();
-	this->get_iks();
-    this->iks_to_joint_command();
-
-    return this->orders;
+    this->uninitialize();
+    return this->orders; 
 }
 
 // KILL CLOUD FUNCTION
@@ -99,13 +111,13 @@ void IKS::get_iks()
         exit(1);
     }
 
-    
+    /* 
     ROS_INFO("\tinverse kinematic solution found");
  	ROS_INFO("\t(%f, %f, %f)", 
 	    this->endpoint.get_point().x, 
 	    this->endpoint.get_point().y, 
 	    this->endpoint.get_point().z);
-    
+    */
 
     this->solved_state = this->service.response.joints[0];
 }

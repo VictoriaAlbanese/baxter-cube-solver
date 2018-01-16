@@ -40,7 +40,8 @@ class Endpoint
         // functions
         Endpoint();
         Endpoint(ros::NodeHandle handle); 
-        bool initialized() { return initialized_; }
+        bool initialized() { return this->initialized_; }
+        void uninitialize() { this->initialized_ = false; };
         geometry_msgs::PoseStamped get_pose() { return this->endpoint; }
         geometry_msgs::Point get_point() { return this->endpoint.pose.position; }
 };

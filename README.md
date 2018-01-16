@@ -6,9 +6,6 @@ Baxter successfully moves his arm over the cube, makes adjustments, and then pic
 
    - adjust initial height
    - make square-finding algorithm more robust
-   - restrict area looked at by point cloud
-   - clean up classes
-   - refactor main
    
  Also on the list may be to make baxter ambidexterous, to better define on the table which areas are "out of reach", to  take nice videos of it all working, and do a brief analysis on his success rate.
  

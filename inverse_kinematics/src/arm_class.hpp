@@ -63,10 +63,11 @@ class Arm
         Arm(ros::NodeHandle handle, bool arm_side); 
         bool initialized() { return this->joints_initialized && this->point_initialized && this->gripper.initialized(); } 
         bool done() { return this->done_; }
+        bool ready_for_pickup() { return (this->endpoint.position.z < -0.1); }
 	    void move_to(baxter_core_msgs::JointCommand new_order);
         void adjust_endpoint_x(float offset);
         void adjust_endpoint_y(float offset);
-        float lower_arm(bool do_it = false);
+        void lower_arm();
         void turn_wrist(float offset);
         void send_home(); 
 };
