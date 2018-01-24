@@ -70,6 +70,7 @@ class Arm
         void lower_arm();
         void turn_wrist(float offset);
         void send_home(); 
+        void bring_center(); 
 };
 
 #endif // ARM_CLASS_HPP

@@ -141,6 +141,10 @@ add_executable(pcl_node src/pcl_node.cpp src/pcl_class.cpp)
 target_link_libraries(pcl_node ${catkin_LIBRARIES})
 add_dependencies(pcl_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
+add_executable(image_test src/old/opencv_test.cpp)
+target_link_libraries(image_test ${catkin_LIBRARIES})
+add_dependencies(image_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
 ## Declare a C++ library
 # add_library(inverse_kinematics
 #   src/${PROJECT_NAME}/inverse_kinematics.cpp

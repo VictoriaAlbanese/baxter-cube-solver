@@ -283,7 +283,7 @@ void Baxter::reset_arms()
         ROS_INFO("RESETTING ARMS...");
     
         this->left_arm.send_home();
-        this->right_arm.send_home();
+        this->right_arm.bring_center();
     
         first = false;
     }

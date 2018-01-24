@@ -236,7 +236,7 @@ geometry_msgs::Quaternion Cloud::initialize_orientation()
 {
 	geometry_msgs::Quaternion q;
     q.x = 0.0;
-    q.y = 1.0;
+    q.y = 1.0; // original 1
     q.z = 0.0;
     q.w = 0.0;
 

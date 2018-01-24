@@ -142,15 +142,57 @@ void Arm::send_home()
         new_orders.names.push_back("left_w0");
         new_orders.names.push_back("left_w1");
         new_orders.names.push_back("left_w2");
+    }
+
+    else
+    {
+        new_orders.names.push_back("right_e0");
+        new_orders.names.push_back("right_e1");
+        new_orders.names.push_back("right_s0");
+        new_orders.names.push_back("right_s1");
+        new_orders.names.push_back("right_w0");
+        new_orders.names.push_back("right_w1");
+        new_orders.names.push_back("right_w2");
+    }
+    
+    new_orders.command.resize(new_orders.names.size());
+    new_orders.command[0] = 0.0; 
+    new_orders.command[1] = 1.3;
+    new_orders.command[2] = 0.0;
+    new_orders.command[3] = -0.8;
+    new_orders.command[4] = 0.0; 
+    new_orders.command[5] = 0.95;
+    new_orders.command[6] = 0.0; 
+
+    this->move_to(new_orders);
+}
+
+// BRING CENTER FUNCTION
+// moves baxter's arms to a hard coded position
+// that brings the cube to a center position for solving
+void Arm::bring_center() 
+{
+    baxter_core_msgs::JointCommand new_orders;
+    new_orders.mode = baxter_core_msgs::JointCommand::POSITION_MODE;
+
+    if (this->arm_side == LEFT) 
+    {
+        new_orders.names.push_back("left_e0");
+        new_orders.names.push_back("left_e1");
+        new_orders.names.push_back("left_s0");
+        new_orders.names.push_back("left_s1");
+        new_orders.names.push_back("left_w0");
+        new_orders.names.push_back("left_w1");
+        new_orders.names.push_back("left_w2");
 
         new_orders.command.resize(new_orders.names.size());
-        new_orders.command[0] = 0.0;
-        new_orders.command[1] = 1.3;
-        new_orders.command[2] = 0.0; 
+        new_orders.command[0] =  0.0;
+        new_orders.command[1] =  1.3;
+        new_orders.command[2] =  0.0; 
         new_orders.command[3] = -0.8;
-        new_orders.command[4] = 0.0;
-        new_orders.command[5] = 0.95; 
-        new_orders.command[6] = 0.0;
+        new_orders.command[4] =  0.0;
+        new_orders.command[5] =  0.95; 
+        new_orders.command[6] =  0.0;
     }
 
     else
@@ -164,13 +206,34 @@ void Arm::send_home()
         new_orders.names.push_back("right_w2");
 
         new_orders.command.resize(new_orders.names.size());
-        new_orders.command[0] = 0.0; 
-        new_orders.command[1] = 1.3;
+
+        new_orders.command[0] =  1.223; 
+        new_orders.command[1] =  1.554;
+        new_orders.command[2] = -0.205;
+        new_orders.command[3] = -0.994;
+        new_orders.command[4] =  1.069; 
+        new_orders.command[5] =  1.465;
+        new_orders.command[6] = -0.191;
+
+        /* solving position
+         *
+        new_orders.command[0] = 1.0; 
+        new_orders.command[1] = 1.5;
         new_orders.command[2] = 0.0;
-        new_orders.command[3] = -0.8;
-        new_orders.command[4] = 0.0; 
-        new_orders.command[5] = 0.95;
-        new_orders.command[6] = 0.0; 
+        new_orders.command[3] = -0.4;
+        new_orders.command[4] = 0.6; 
+        new_orders.command[5] = 1.25;
+        new_orders.command[6] = 0.0;
+        */
+
+    /*1.2225826879446748, 
+    1.5543060333248955, 
+    -0.2051699303796741, 
+    -0.9936360553527768, 
+    1.068801113959162, 
+    1.4653351476275416, 
+    -0.190980608091734,*/ 
+
     }
 
     this->move_to(new_orders);
@@ -213,18 +276,6 @@ void Arm::point_callback(const baxter_core_msgs::EndpointStateConstPtr& msg)
 {
     this->point_initialized = true;
     this->endpoint = msg->pose;
-
-    /*
-    ROS_INFO("position: (%f, %f, %f)", 
-            this->endpoint.position.x,
-            this->endpoint.position.y,
-            this->endpoint.position.z);
-
-    ROS_INFO("orientation: (%f, %f, %f)", 
-            this->endpoint.orientation.x,
-            this->endpoint.orientation.y,
-            this->endpoint.orientation.z);
-    */
 }
 
 // INIT FUNCTION
