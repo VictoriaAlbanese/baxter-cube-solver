@@ -132,6 +132,7 @@ add_executable(master
     src/iks_class.cpp 
     src/endpoint_class.cpp
     src/square_detector_class.cpp
+    src/color_reader_class.cpp
     src/face_display_class.cpp
 )
 target_link_libraries(master ${catkin_LIBRARIES})
@@ -140,6 +141,10 @@ add_dependencies(master ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TA
 add_executable(pcl_node src/pcl_node.cpp src/pcl_class.cpp)
 target_link_libraries(pcl_node ${catkin_LIBRARIES})
 add_dependencies(pcl_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+add_executable(iks_test src/old/ik_client_node.cpp)
+target_link_libraries(iks_test ${catkin_LIBRARIES})
+add_dependencies(iks_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_executable(image_test src/old/opencv_test.cpp)
 target_link_libraries(image_test ${catkin_LIBRARIES})

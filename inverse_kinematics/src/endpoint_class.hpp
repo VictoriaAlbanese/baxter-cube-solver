@@ -18,8 +18,12 @@
 #include "geometry_msgs/Quaternion.h"
 #include "std_msgs/Header.h"
 
-#define ROLL 0
-#define PITCH 3.14
+#include <string>
+
+#define LEFT 0
+#define RIGHT 1
+
+using std::string;
 
 class Endpoint
 {
@@ -39,11 +43,12 @@ class Endpoint
 
         // functions
         Endpoint();
-        Endpoint(ros::NodeHandle handle); 
+        Endpoint(ros::NodeHandle handle, bool arm_side); 
         bool initialized() { return this->initialized_; }
         void uninitialize() { this->initialized_ = false; };
         geometry_msgs::PoseStamped get_pose() { return this->endpoint; }
         geometry_msgs::Point get_point() { return this->endpoint.pose.position; }
+        geometry_msgs::Quaternion get_q() { return this->endpoint.pose.orientation; }
 };
 
 #endif // ENDPOINT_CLASS_HPP

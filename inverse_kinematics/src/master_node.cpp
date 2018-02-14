@@ -25,7 +25,10 @@ int main(int argc, char **argv)
     while (ros::ok() && baxter.get_state() != DONE) 
     {
         // pickup the cube
-        baxter.pickup_cube();
+        if (baxter.get_state() < INSPECT_CUBE) baxter.pickup_cube();
+
+        // read in the colors of the cube
+        else baxter.inspect_cube();
 
         // spin & sleep
         ros::spinOnce();

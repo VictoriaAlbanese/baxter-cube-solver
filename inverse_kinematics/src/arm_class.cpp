@@ -31,16 +31,20 @@ Arm::Arm(ros::NodeHandle handle, bool arm_side) : gripper(handle, arm_side)
     this->init();
     this->arm_side = arm_side;
 
-    string pub_topic;
-    if (this->arm_side == LEFT) pub_topic = "/robot/limb/left/joint_command";
-    else pub_topic = "/robot/limb/right/joint_command";
+    string pub_joint_topic;
+    if (this->arm_side == LEFT) pub_joint_topic = "/robot/limb/left/joint_command";
+    else pub_joint_topic = "/robot/limb/right/joint_command";
+
+    string pub_point_topic;
+    if (this->arm_side == LEFT) pub_point_topic = "/left/goal_point";
+    else pub_point_topic = "/right/goal_point";
 
     string sub_topic;
     if (this->arm_side == LEFT) sub_topic = "/robot/limb/left/endpoint_state";
     else sub_topic = "/robot/limb/right/endpoint_state";
    
-    this->order_pub = handle.advertise<baxter_core_msgs::JointCommand>(pub_topic, 10);
-    this->point_pub = handle.advertise<geometry_msgs::Pose>("goal_point", 10);
+    this->order_pub = handle.advertise<baxter_core_msgs::JointCommand>(pub_joint_topic, 10);
+    this->point_pub = handle.advertise<geometry_msgs::Pose>(pub_point_topic, 10);
     this->joint_sub = handle.subscribe<sensor_msgs::JointState>("/robot/joint_states", 10, &Arm::joint_callback, this);
     this->point_sub = handle.subscribe<baxter_core_msgs::EndpointState>(sub_topic, 10, &Arm::point_callback, this);
 }
@@ -84,7 +88,7 @@ void Arm::adjust_endpoint_x(float offset)
     // changing "y" in x function because it translates to
     // movement in the "y direction" of the resulting image
     geometry_msgs::Pose new_pose = this->endpoint;
-    new_pose.position.y+= increment;
+    new_pose.position.x+= increment;
     this->point_pub.publish(new_pose);
 }
 
@@ -99,7 +103,7 @@ void Arm::adjust_endpoint_y(float offset)
     // changing "x" in y function because it translates to
     // movement in the "y direction" of the resulting image
     geometry_msgs::Pose new_pose = this->endpoint;
-    new_pose.position.x+= increment;
+    new_pose.position.y+= increment;
     this->point_pub.publish(new_pose);
 }
 
@@ -107,7 +111,7 @@ void Arm::adjust_endpoint_y(float offset)
 // lowers baxter's arm a bit
 void Arm::lower_arm() 
 {
-    float positions[4] = { 0.1, 0.0, -0.07, -0.14 };
+    float positions[4] = { 0.1, 0.0, -0.07, -0.13 };
     geometry_msgs::Pose new_pose = this->endpoint;
       
     if (fabs(new_pose.position.z - positions[0]) < fabs(new_pose.position.z - positions[1])
@@ -186,15 +190,15 @@ void Arm::bring_center()
         new_orders.names.push_back("left_w2");
 
         new_orders.command.resize(new_orders.names.size());
-        new_orders.command[0] =  0.0;
-        new_orders.command[1] =  1.3;
-        new_orders.command[2] =  0.0; 
-        new_orders.command[3] = -0.8;
-        new_orders.command[4] =  0.0;
-        new_orders.command[5] =  0.95; 
-        new_orders.command[6] =  0.0;
+        new_orders.command[0] = -1.179; 
+        new_orders.command[1] =  1.492;
+        new_orders.command[2] =  0.280;
+        new_orders.command[3] = -0.994;
+        new_orders.command[4] = -1.024; 
+        new_orders.command[5] =  1.493;
+        new_orders.command[6] =  0.000;
     }
-
+    
     else
     {
         new_orders.names.push_back("right_e0");
@@ -206,34 +210,78 @@ void Arm::bring_center()
         new_orders.names.push_back("right_w2");
 
         new_orders.command.resize(new_orders.names.size());
-
         new_orders.command[0] =  1.223; 
         new_orders.command[1] =  1.554;
         new_orders.command[2] = -0.205;
         new_orders.command[3] = -0.994;
         new_orders.command[4] =  1.069; 
         new_orders.command[5] =  1.465;
-        new_orders.command[6] = -0.191;
+        new_orders.command[6] =  0.000;
+    }
+    
+    this->move_to(new_orders);
 
-        /* solving position
-         *
-        new_orders.command[0] = 1.0; 
-        new_orders.command[1] = 1.5;
-        new_orders.command[2] = 0.0;
-        new_orders.command[3] = -0.4;
-        new_orders.command[4] = 0.6; 
-        new_orders.command[5] = 1.25;
-        new_orders.command[6] = 0.0;
-        */
+    /*
+    // solving position
+    new_orders.command[0] = 1.0; 
+    new_orders.command[1] = 1.5;
+    new_orders.command[2] = 0.0;
+    new_orders.command[3] = -0.4;
+    new_orders.command[4] = 0.6; 
+    new_orders.command[5] = 1.25;
+    new_orders.command[6] = 0.0;
+    */
 
-    /*1.2225826879446748, 
-    1.5543060333248955, 
-    -0.2051699303796741, 
-    -0.9936360553527768, 
-    1.068801113959162, 
-    1.4653351476275416, 
-    -0.190980608091734,*/ 
+}
 
+// MAKE ENDPOINTS PERPENDICULAR
+// Adjusts the endpoints of the "bring center" function, 
+// ensuring the endpoints are perpendicular
+void Arm::make_endpoints_perpendicular() 
+{
+    geometry_msgs::Point point;
+    point.x = 0.60;  
+    point.y = 0.05; 
+    point.z = 0.65; 
+
+    geometry_msgs::Quaternion quaternion;
+    quaternion.x =  0.000;  
+    quaternion.y =  0.707;  
+    quaternion.z =  0.707;
+    quaternion.w =  0.000; 
+   
+    if (this->arm_side == LEFT) 
+    {
+        point.y = 0.02;
+        quaternion.z*= -1.0;
+    }
+
+    geometry_msgs::Pose new_pose;
+    new_pose.position = point;
+    new_pose.orientation = quaternion;
+
+    this->point_pub.publish(new_pose);
+}
+
+// ADJUST Y FUNCTION
+// sets the y position of the endpoint to a specified value
+void Arm::adjust_y(float new_position) 
+{
+    geometry_msgs::Pose new_pose = this->endpoint;
+    new_pose.position.y = new_position;
+    this->point_pub.publish(new_pose);
+}
+
+// TURN WRIST TO FUNCTION
+// brings wrist to a specified position
+void Arm::turn_wrist_to(float new_position) 
+{
+    baxter_core_msgs::JointCommand new_orders = this->orders;
+    for (size_t i = 0; i < new_orders.names.size(); i++)
+    {
+        string name = (arm_side == LEFT ? "left_w2" : "right_w2");
+        if (new_orders.names[i].find(name) != string::npos) 
+            new_orders.command[i] = new_position; 
     }
 
     this->move_to(new_orders);

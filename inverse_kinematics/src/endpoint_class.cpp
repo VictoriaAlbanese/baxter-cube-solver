@@ -24,10 +24,14 @@ Endpoint::Endpoint()
 // CONSTRUCTOR
 // does the ros initialization; waits for 
 // the callback to properly initialize the point
-Endpoint::Endpoint(ros::NodeHandle handle) 
+Endpoint::Endpoint(ros::NodeHandle handle, bool arm_side) 
 {
     this->init();
-    this->sub = handle.subscribe<geometry_msgs::Pose>("goal_point", 10, &Endpoint::callback, this);
+
+    string sub_topic;
+    if (arm_side == LEFT) sub_topic = "/left/goal_point";
+    else sub_topic = "/right/goal_point";
+    this->sub = handle.subscribe<geometry_msgs::Pose>(sub_topic, 10, &Endpoint::callback, this);
 }
 
 //////////////////////////////////////////////////////////////
@@ -41,6 +45,7 @@ void Endpoint::callback(const geometry_msgs::Pose::ConstPtr& msg)
 {
     this->initialize_pose();
     this->endpoint.pose = *msg;
+    ROS_INFO("p(%f, %f, %f)", endpoint.pose.position.x, endpoint.pose.position.y, endpoint.pose.position.z);
     this->initialized_ = true;
 }
 

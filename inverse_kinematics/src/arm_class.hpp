@@ -64,13 +64,17 @@ class Arm
         bool initialized() { return this->joints_initialized && this->point_initialized && this->gripper.initialized(); } 
         bool done() { return this->done_; }
         bool ready_for_pickup() { return (this->endpoint.position.z < -0.1); }
+        float get_endpoint_y() { return this->endpoint.position.y; };
 	    void move_to(baxter_core_msgs::JointCommand new_order);
         void adjust_endpoint_x(float offset);
         void adjust_endpoint_y(float offset);
-        void lower_arm();
         void turn_wrist(float offset);
+        void turn_wrist_to(float new_position);
+        void lower_arm();
         void send_home(); 
         void bring_center(); 
+        void make_endpoints_perpendicular();
+        void adjust_y(float new_position); 
 };
 
 #endif // ARM_CLASS_HPP

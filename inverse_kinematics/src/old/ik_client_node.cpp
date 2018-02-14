@@ -7,6 +7,10 @@
 //
 //////////////////////////////////////////////////////////////
 
+#include <cstdlib>
+#include <string>
+#include <iostream>
+
 #include "ros/ros.h"
 #include "baxter_core_msgs/JointCommand.h"
 #include "baxter_core_msgs/SolvePositionIK.h"
@@ -17,20 +21,21 @@
 #include "geometry_msgs/Quaternion.h"
 #include "sensor_msgs/JointState.h"
 #include "std_msgs/Header.h"
-
-#include "endpoint_class.hpp"
-
-#include <cstdlib>
-#include <string>
-#include <iostream>
  
-#define DUMMY_X 0.6569
-#define DUMMY_Y -0.8525
-#define DUMMY_Z 0.0388
+#define LEFT 0
+#define RIGHT 1
 
-baxter_core_msgs::SolvePositionIK make_service_request(ros::NodeHandle handle); 
-geometry_msgs::PoseStamped get_pose(geometry_msgs::Point new_point);
+#define R_AWAY 0.0
+#define R_HOLDING_SOFT 0.03
+#define R_HOLDING_FIRM 0.05
+#define L_AWAY 0.0
+#define L_HOLDING_SOFT -0.03
+#define L_HOLDING_FIRM -0.05
+
+
 sensor_msgs::JointState get_iks(ros::ServiceClient client, baxter_core_msgs::SolvePositionIK service);
+baxter_core_msgs::SolvePositionIK make_service_request(ros::NodeHandle handle, bool side, float action); 
+geometry_msgs::PoseStamped get_pose(bool side, float action);
 
 using std::string;
 
@@ -39,35 +44,96 @@ int main(int argc, char **argv)
         // Initialize ros
         ros::init(argc, argv, "ik_client_node");
         ros::NodeHandle nh;
-       
-        // Create a joint publisher to send the arm to the desired point
-        ros::Publisher joint_pub = nh.advertise<baxter_core_msgs::JointCommand>("robot/limb/right/joint_command", 10);
         ros::Rate loop_rate(10);
+      
+        // Setup the left arm
+        ros::Publisher joint_pub_left = nh.advertise<baxter_core_msgs::JointCommand>("robot/limb/left/joint_command", 10);
+        const string left_name = "ExternalTools/left/PositionKinematicsNode/IKService";
+        ros::ServiceClient client_left = nh.serviceClient<baxter_core_msgs::SolvePositionIK>(left_name);
 
-        // Create the client 
-        const string service_name = "ExternalTools/right/PositionKinematicsNode/IKService";
-        ros::ServiceClient client = nh.serviceClient<baxter_core_msgs::SolvePositionIK>(service_name);
+        // Setup the right arm 
+        ros::Publisher joint_pub_right = nh.advertise<baxter_core_msgs::JointCommand>("robot/limb/right/joint_command", 10);
+        const string right_name = "ExternalTools/right/PositionKinematicsNode/IKService";
+        ros::ServiceClient client_right = nh.serviceClient<baxter_core_msgs::SolvePositionIK>(right_name);
 
-        // Make the service to fill out the request
-        baxter_core_msgs::SolvePositionIK service = make_service_request(nh);
-        sensor_msgs::JointState solved_state = get_iks(client, service);
+        // Variables
+        baxter_core_msgs::SolvePositionIK service_left, service_right;
+        sensor_msgs::JointState solved_state_left, solved_state_right;
+        baxter_core_msgs::JointCommand left_away, left_holding_soft, left_holding_firm;
+        baxter_core_msgs::JointCommand right_away, right_holding_soft, right_holding_firm;
 
-        // Set the solved states to the new command message
-        baxter_core_msgs::JointCommand msg;
-        msg.command.resize(solved_state.name.size());
-        msg.mode = baxter_core_msgs::JointCommand::POSITION_MODE;
-        for (int i = 0; i < solved_state.name.size(); i++) 
+        // Bring the right arm to the away position
+        /*service_right = make_service_request(nh, RIGHT, R_AWAY);
+        solved_state_right = get_iks(client_right, service_right);
+        right_away.command.resize(solved_state_right.name.size());
+        right_away.mode = baxter_core_msgs::JointCommand::POSITION_MODE;
+        for (int i = 0; i < solved_state_right.name.size(); i++) 
         {
-            msg.names.push_back(solved_state.name[i]);
-            msg.command[i] = solved_state.position[i];
+            right_away.names.push_back(solved_state_right.name[i]);
+            right_away.command[i] = solved_state_right.position[i];
+        }*/
+
+        // Bring the right arm to the firm holding position
+        service_right = make_service_request(nh, RIGHT, R_HOLDING_FIRM);
+        solved_state_right = get_iks(client_right, service_right);
+        right_holding_firm.command.resize(solved_state_right.name.size());
+        right_holding_firm.mode = baxter_core_msgs::JointCommand::POSITION_MODE;
+        for (int i = 0; i < solved_state_right.name.size(); i++) 
+        {
+            right_holding_firm.names.push_back(solved_state_right.name[i]);
+            right_holding_firm.command[i] = solved_state_right.position[i];
+        }
+    
+        // Bring the right arm to the soft holding position
+        /*service_right = make_service_request(nh, RIGHT, R_HOLDING_SOFT);
+        solved_state_right = get_iks(client_right, service_right);
+        right_holding_soft.command.resize(solved_state_right.name.size());
+        right_holding_soft.mode = baxter_core_msgs::JointCommand::POSITION_MODE;
+        for (int i = 0; i < solved_state_right.name.size(); i++) 
+        {
+            right_holding_soft.names.push_back(solved_state_right.name[i]);
+            right_holding_soft.command[i] = solved_state_right.position[i];
+        }*/
+
+        // Bring the left arm to the away position
+        service_left = make_service_request(nh, LEFT, L_AWAY);
+        solved_state_left = get_iks(client_left, service_left);
+        left_away.command.resize(solved_state_left.name.size());
+        left_away.mode = baxter_core_msgs::JointCommand::POSITION_MODE;
+        for (int i = 0; i < solved_state_left.name.size(); i++) 
+        {
+            left_away.names.push_back(solved_state_left.name[i]);
+            left_away.command[i] = solved_state_left.position[i];
         }
         
+        // Bring the left arm to the soft holding position
+        /*service_left = make_service_request(nh, LEFT, L_HOLDING_SOFT);
+        solved_state_left = get_iks(client_left, service_left);
+        left_holding_soft.command.resize(solved_state_left.name.size());
+        left_holding_soft.mode = baxter_core_msgs::JointCommand::POSITION_MODE;
+        for (int i = 0; i < solved_state_left.name.size(); i++) 
+        {
+            left_holding_soft.names.push_back(solved_state_left.name[i]);
+            left_holding_soft.command[i] = solved_state_left.position[i];
+        }
+
+        // Bring the left arm to the firm holding position
+        service_left = make_service_request(nh, LEFT, L_HOLDING_FIRM);
+        solved_state_left = get_iks(client_left, service_left);
+        left_holding_firm.command.resize(solved_state_left.name.size());
+        left_holding_firm.mode = baxter_core_msgs::JointCommand::POSITION_MODE;
+        for (int i = 0; i < solved_state_left.name.size(); i++) 
+        {
+            left_holding_firm.names.push_back(solved_state_left.name[i]);
+            left_holding_firm.command[i] = solved_state_left.position[i];
+        }
+        */
+        // Publish the solved positions to the joints
         while (ros::ok()) 
         {
-            // Publish the solved positions to the joints
-            joint_pub.publish(msg);
+            joint_pub_left.publish(left_away);
+            joint_pub_right.publish(right_holding_firm);
 
-            // Spin & sleep
             ros::spinOnce();
             loop_rate.sleep();
         }
@@ -92,18 +158,17 @@ sensor_msgs::JointState get_iks(ros::ServiceClient client, baxter_core_msgs::Sol
             ROS_ERROR("Failure: no valid ik joint solution");
             exit(1);
         }
-
+        ROS_INFO("SUCCESS!!");
         return service.response.joints[0];
 }
 
 // MAKE SERVICE REQUEST
 // Makes the service request by setting up the endpoint
-baxter_core_msgs::SolvePositionIK make_service_request(ros::NodeHandle handle) 
+baxter_core_msgs::SolvePositionIK make_service_request(ros::NodeHandle handle, bool side, float action) 
 {
         // Get the endpoint setup
-        Endpoint point(handle);
-        geometry_msgs::PoseStamped pose = get_pose(point.get_point());
-	    ROS_INFO("(%f, %f, %f)", point.get_point().x, point.get_point().y, point.get_point().z);
+        geometry_msgs::PoseStamped pose = get_pose(side, action);
+	    ROS_INFO("(%f, %f, %f)", pose.pose.position.x, pose.pose.position.y, pose.pose.position.z);
 
         // Make the service request
         baxter_core_msgs::SolvePositionIK service;
@@ -116,7 +181,7 @@ baxter_core_msgs::SolvePositionIK make_service_request(ros::NodeHandle handle)
 
 // GET DESIRED POSE
 // Make the stamped_pose object; refactored from main
-geometry_msgs::PoseStamped get_pose(geometry_msgs::Point new_point) 
+geometry_msgs::PoseStamped get_pose(bool side, float action) 
 {
         // Make a header for the pose_stamped
         std_msgs::Header header = std_msgs::Header();
@@ -125,34 +190,17 @@ geometry_msgs::PoseStamped get_pose(geometry_msgs::Point new_point)
         
         // Make the point for the pose
         geometry_msgs::Point point;
-        point.x = new_point.x; 
-        point.y = new_point.y;
-        point.z = 0.0;
-       
-        // The following math functions take a Roll, Pitch and Yaw and convert them to the XYZW for orientation.
-        // These Roll, Pitch and Yaw values correspond to the hand pointing straight down.
-        const double ROLL = 0, PITCH = 3.14, YAW = 0; // yaw should change
- 
-        double mathc1 = cos(PITCH);
-        double maths1 = sin(PITCH);
-        double mathc2 = cos(YAW);
-        double maths2 = sin(YAW);
-        double mathc3 = cos(ROLL);
-        double maths3 = sin(ROLL);
-                                                                     
-        double oriw = sqrt(1.0 + mathc1 * mathc2 + mathc1 * mathc3 - maths1 * maths2 * maths3 + mathc2 * mathc3) / 2.0;
-        double oriw4 = (4.0 * oriw);
-        
-        double orix = (mathc2 * maths3 + mathc1 * maths3 + maths1 * maths2 * mathc3) / oriw4;
-        double oriy = (maths1 * mathc2 + maths1 * mathc3 + mathc1 * maths2 * maths3) / oriw4;
-        double oriz = (-maths1 * maths3 + mathc1 * maths2 * mathc3 + maths2) / oriw4;
+        point.x = 0.567;  
+        point.y = action; 
+        point.z = 0.637; 
 
         // Make the quaternion for the pose 
         geometry_msgs::Quaternion quaternion;
-        quaternion.x = orix; 
-        quaternion.y = oriy;
-        quaternion.z = oriz;
-        quaternion.w = oriw;
+        quaternion.x =  0.000;  
+        quaternion.y = -0.707;  
+        quaternion.z = -0.707;
+        quaternion.w =  0.000;
+        if (side == LEFT) quaternion.y*= -1;             
 
         // Make the pose for the pose_stamped
         geometry_msgs::Pose pose;

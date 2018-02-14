@@ -22,8 +22,8 @@ SquareDetector::SquareDetector() : it(nh)
 {
     this->initialized = false;
 
-    namedWindow(WINDOW_NAME);
-    this->pub = it.advertise("/image_converter/output_video", 1);
+    namedWindow(SD_WINDOW_NAME);
+    this->pub = it.advertise("/square_detector/output_video", 1);
     this->sub = it.subscribe("/cameras/right_hand_camera/image", 1, &SquareDetector::callback, this);
 
     while (!this->initialized) ros::spinOnce();
@@ -36,8 +36,8 @@ SquareDetector::SquareDetector(ros::NodeHandle handle) : it(handle)
 {
     this->initialized = false;
 
-    namedWindow(WINDOW_NAME);
-    this->pub = it.advertise("/image_converter/output_video", 1);
+    namedWindow(SD_WINDOW_NAME);
+    this->pub = it.advertise("/square_detector/output_video", 1);
     this->sub = it.subscribe("/cameras/right_hand_camera/image", 1, &SquareDetector::callback, this);
 
     while (!this->initialized) ros::spinOnce();
@@ -47,7 +47,7 @@ SquareDetector::SquareDetector(ros::NodeHandle handle) : it(handle)
 // destroys the window
 SquareDetector::~SquareDetector()
 {
-    destroyWindow(WINDOW_NAME);
+    destroyWindow(SD_WINDOW_NAME);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -83,7 +83,7 @@ void SquareDetector::callback(const sensor_msgs::ImageConstPtr& msg)
     circle(cv_ptr->image, Point(X_DESIRED, Y_DESIRED), 10, CV_RGB(255,0,0));
 
     // Update GUI Window
-    imshow(WINDOW_NAME, cv_ptr->image);
+    imshow(SD_WINDOW_NAME, cv_ptr->image);
     waitKey(3);
 
     // Output modified video stream
@@ -132,7 +132,7 @@ void SquareDetector::find_squares(Mat& image)
         Canny(gray, dialated, 0, THRESH, 3);
         dilate(dialated, dialated, Mat(), Point(-1,-1), 3);
         findContours(dialated, contours, RETR_LIST, CHAIN_APPROX_SIMPLE);
-        imshow(WINDOW_NAME, dialated);
+        imshow(SD_WINDOW_NAME, dialated);
     
         // test each contour
         for(size_t i = 0; i < contours.size(); i++)
@@ -187,7 +187,7 @@ void SquareDetector::draw_squares(Mat& image)
         circle(image, centroid, 4, CV_RGB(0,255,0), -1);
     }
         
-    imshow(WINDOW_NAME, image);
+    imshow(SD_WINDOW_NAME, image);
 }
 
 // GET BIGGEST SQUARE

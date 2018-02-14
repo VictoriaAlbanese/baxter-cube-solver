@@ -25,7 +25,7 @@ IKS::IKS()
 
 // ONE ARGUMENT CONSTRUCTOR
 // Wait for an endpoint and then get the iks
-IKS::IKS(ros::NodeHandle handle, bool arm_side) : endpoint(handle)
+IKS::IKS(ros::NodeHandle handle, bool arm_side) : endpoint(handle, arm_side)
 {
     this->handle = handle;
 
@@ -107,17 +107,26 @@ void IKS::get_iks()
     if (!this->service.response.isValid[0]) 
     {
         this->baxter.make_face(SAD);
-        ROS_ERROR("Failure: no valid ik joint solution");
+        ROS_ERROR("Failure: no valid ik joint solution for ");
+        ROS_ERROR("(%f, %f, %f)", 
+	        this->endpoint.get_point().x, 
+	        this->endpoint.get_point().y, 
+	        this->endpoint.get_point().z);
+        if (this->arm_side == LEFT) ROS_ERROR("on the left side");
+        else ROS_ERROR("on the right side");
         exit(1);
     }
 
-    /* 
-    ROS_INFO("\tinverse kinematic solution found");
- 	ROS_INFO("\t(%f, %f, %f)", 
+    ROS_INFO("p(%f, %f, %f)", 
 	    this->endpoint.get_point().x, 
 	    this->endpoint.get_point().y, 
 	    this->endpoint.get_point().z);
-    */
+
+    ROS_INFO("q(%f, %f, %f, %f)", 
+	    this->endpoint.get_q().x, 
+	    this->endpoint.get_q().y, 
+	    this->endpoint.get_q().z,
+        this->endpoint.get_q().w);
 
     this->solved_state = this->service.response.joints[0];
 }
@@ -138,15 +147,6 @@ void IKS::iks_to_joint_command()
         msg.names.push_back("left_w0");
         msg.names.push_back("left_w1");
         msg.names.push_back("left_w2");
-
-        msg.command.resize(msg.names.size());
-        msg.command[0] = this->solved_state.position[2];
-        msg.command[1] = this->solved_state.position[3];
-        msg.command[2] = this->solved_state.position[0];
-        msg.command[3] = this->solved_state.position[1];
-        msg.command[4] = this->solved_state.position[4];
-        msg.command[5] = this->solved_state.position[5];
-        msg.command[6] = this->solved_state.position[6];
     }
 
     else
@@ -158,16 +158,16 @@ void IKS::iks_to_joint_command()
         msg.names.push_back("right_w0");
         msg.names.push_back("right_w1");
         msg.names.push_back("right_w2");
-
-        msg.command.resize(msg.names.size());
-        msg.command[0] = this->solved_state.position[2];
-        msg.command[1] = this->solved_state.position[3];
-        msg.command[2] = this->solved_state.position[0];
-        msg.command[3] = this->solved_state.position[1];
-        msg.command[4] = this->solved_state.position[4];
-        msg.command[5] = this->solved_state.position[5];
-        msg.command[6] = this->solved_state.position[6];
     }
+
+    msg.command.resize(msg.names.size());
+    msg.command[0] = this->solved_state.position[2];
+    msg.command[1] = this->solved_state.position[3];
+    msg.command[2] = this->solved_state.position[0];
+    msg.command[3] = this->solved_state.position[1];
+    msg.command[4] = this->solved_state.position[4];
+    msg.command[5] = this->solved_state.position[5];
+    msg.command[6] = this->solved_state.position[6];
 
     this->orders = msg;
 }

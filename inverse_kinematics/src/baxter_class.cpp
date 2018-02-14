@@ -27,8 +27,10 @@ Baxter::Baxter(ros::NodeHandle handle)
    : display(handle)
    , left_arm(handle, LEFT) 
    , right_arm(handle, RIGHT)
-   , ik_solver(handle, RIGHT)
+   , left_iks(handle, LEFT)
+   , right_iks(handle, RIGHT)
    , detector(handle) 
+   , reader(handle)
 {
     this->state = INITIALIZE;
     this->first = true;
@@ -63,15 +65,39 @@ void Baxter::pickup_cube()
 
         case LOWERING:
             this->lower_arm();
-                
             break;
              
         case PICKUP:
             this->grab_cube();
             break;
+    }
+}
+
+// INSPECT CUBE FUNCTION
+// lifts the cube up to baxter's "face" and looks at four 
+// of the sides; also checks the side facing the hand its in
+void Baxter::inspect_cube() 
+{
+    switch(this->state) 
+    {
+        case READ_BOTTOM:
+            this->read_bottom();
+            break;
+
+        case READ_TOP: 
+            this->read_top();
+            break;
+
+        case READ_BACK:
+            this->read_back();
+            break;
+
+        case READ_FRONT:
+            this->read_front();
+            break;
 
         case TEARDOWN:
-            this->reset_arms();        
+            this->reset_arms();
             break;
     }
 }
@@ -85,7 +111,7 @@ void Baxter::pickup_cube()
 void Baxter::move_on(string message, int new_state) 
 {
     ROS_INFO("%s", message.c_str());
-    this->ik_solver.uninitialize();
+    this->right_iks.uninitialize();
     this->state = new_state;
     this->first = true;
     this->count = 0;
@@ -102,20 +128,18 @@ void Baxter::initialize_arms()
         if (this->first) 
         { 
             ROS_INFO("INITIALIZING ARMS...");
-            
             this->left_arm.send_home();
             this->right_arm.send_home();
             if (!this->left_arm.gripper.calibrated()) this->left_arm.gripper.calibrate();
             if (!this->right_arm.gripper.calibrated()) this->right_arm.gripper.calibrate();
             this->left_arm.gripper.release();
             this->right_arm.gripper.release();
-
             this->first = false;
         }
                     
         else if (this->arms_ready()) 
         {
-            move_on("ARMS INITIALIZED...", OVER_CUBE); 
+            this->move_on("ARMS INITIALIZED...", OVER_CUBE); 
             this->display.make_face(THINKING);
             ROS_INFO("LOOKING FOR CUBE...");
         }
@@ -128,15 +152,14 @@ void Baxter::initialize_arms()
 // and moves the arm over it, moving on when done
 void Baxter::find_cube() 
 {
-    if (this->first && this->ik_solver.create_orders()) 
+    if (this->first && this->right_iks.create_orders()) 
     {
-        this->right_arm.move_to(this->ik_solver.get_orders());
+        this->right_arm.move_to(this->right_iks.get_orders());
         this->display.make_face(HAPPY);
-                  
         this->first = false;
     }
         
-    else if (!this->first && this->arms_ready()) move_on("ARM OVER CUBE...", CHECK_SQUARE); 
+    else if (!this->first && this->arms_ready()) this->move_on("ARM OVER CUBE...", CHECK_SQUARE); 
 }
 
 // CHECK SQUARES FUNCTION
@@ -147,7 +170,7 @@ void Baxter::check_squares()
 { 
     if (this->detector.get_num_squares() != 0) 
     {
-        this->ik_solver.kill_cloud();
+        this->right_iks.kill_cloud();
         this->move_on("SQUARES DETECTED...", FIX_ORIENTATION); 
     } 
    
@@ -175,7 +198,7 @@ void Baxter::fix_orientation()
             ROS_INFO("FIXING ORIENTATION...");
             ROS_INFO("\tgoal offset is between 58 and 62 degrees");
             this->display.make_face(THINKING);
-            first = false;
+            this->first = false;
         }
  
         offset = this->detector.get_angular_offset();
@@ -203,7 +226,7 @@ void Baxter::fix_position()
             ROS_INFO("FIXING POSITION...");
             ROS_INFO("\tgoal offset is within 10px in both directions");
             this->display.make_face(THINKING);
-            first = false;
+            this-> first = false;
         }
 
         offset_x = this->detector.get_x_offset();
@@ -213,19 +236,19 @@ void Baxter::fix_position()
 
         if (fabs(offset_x) > 10) 
         {
-            this->right_arm.adjust_endpoint_x(offset_x);
-            if (this->ik_solver.create_orders())
-                this->right_arm.move_to(this->ik_solver.get_orders());
+            this->right_arm.adjust_endpoint_y(offset_x); // xy directions are swapped from baxter to image
+            if (this->right_iks.create_orders())
+                this->right_arm.move_to(this->right_iks.get_orders());
         }
 
         else if (fabs(offset_y) > 10) 
         {
-            this->right_arm.adjust_endpoint_y(offset_y);
-            if (this->ik_solver.create_orders())
-                this->right_arm.move_to(this->ik_solver.get_orders());
+            this->right_arm.adjust_endpoint_x(offset_y); // xy directions are swapped from baxter to image
+            if (this->right_iks.create_orders())
+                this->right_arm.move_to(this->right_iks.get_orders());
         }
 
-        else move_on("POSITION FIXED...", LOWERING); 
+        else this->move_on("POSITION FIXED...", LOWERING); 
     }
 }
 
@@ -238,18 +261,18 @@ void Baxter::lower_arm()
     if (this->first)
     {
         this->right_arm.lower_arm();
-        if (this->ik_solver.create_orders())
+        if (this->right_iks.create_orders())
         {
             ROS_INFO("LOWERING ARM...");
-            this->right_arm.move_to(this->ik_solver.get_orders());
-            first = false;
+            this->right_arm.move_to(this->right_iks.get_orders());
+            this->first = false;
         }
     }
         
     else if (this->arms_ready()) 
     {
-        if (this->right_arm.ready_for_pickup()) move_on("READY FOR PICKUP...", PICKUP); 
-        else move_on("ARM LOWERED...", FIX_ORIENTATION); 
+        if (this->right_arm.ready_for_pickup()) this->move_on("READY FOR PICKUP...", PICKUP); 
+        else this->move_on("ARM LOWERED...", FIX_ORIENTATION); 
     }
 }
 
@@ -260,35 +283,175 @@ void Baxter::grab_cube()
     if (this->first) 
     { 
         ROS_INFO("GRABBING CUBE...");
- 
         this->right_arm.gripper.grip();
         this->display.make_face(HAPPY);
-                
         this->first = false;
     }
             
     else if (this->arms_ready()) 
     {
-        move_on("CUBE GRABBED...", TEARDOWN); 
+        this->move_on("CUBE GRABBED...", INSPECT_CUBE); 
+    }
+}
+
+// READ BOTTOM FUNCTION
+// moves the arms into the right position for 
+// reading in the bottom face of the cube's colors
+void Baxter::read_bottom() 
+{
+    if (this->count == 0) 
+    {
+        ROS_INFO("LIFTING ARMS...");
+        this->left_arm.bring_center();
+        this->right_arm.bring_center();
+        this->count = 1;
+    }
+
+    else if (this->arms_ready() && this->count == 1) 
+    { 
+        this->right_arm.make_endpoints_perpendicular();
+        if (this->right_iks.create_orders()) 
+        {
+            ROS_INFO("ADJUSTING RIGHT ARM...");
+            this->right_arm.move_to(this->right_iks.get_orders());
+            this->count = 2;
+        }
+    }
+
+    else if (this->arms_ready() && this->count == 2) 
+    { 
+        this->left_arm.make_endpoints_perpendicular();
+        if (this->left_iks.create_orders()) 
+        {
+            ROS_INFO("ADJUSTING LEFT ARM...");
+            this->left_arm.move_to(this->left_iks.get_orders());
+            this->count = 3;
+        }
+    }
+
+    else if (this->left_arm.done() && count == 3) 
+    {
+        ROS_INFO("READING BOTTOM FACE...");
+        this->reader.get_colors();
+        this->move_on("BOTTOM FACE READ...", READ_TOP); 
+    }
+}
+
+// READ TOP FUNCTION
+// moves the arms into the right position for 
+// reading in the top face of the cube's colors
+void Baxter::read_top()
+{
+    if (this->first) 
+    { 
+        ROS_INFO("TURNING WRIST...");
+        this->right_arm.turn_wrist_to(3.0);
+        this->first = false;
+    }
+                
+    else if (this->arms_ready()) 
+    {
+        ROS_INFO("READING TOP FACE...");
+        this->reader.get_colors();
+        this->move_on("TOP FACE READ...", READ_BACK); 
+    }
+}
+
+// READ BACK FUNCTION
+// cube swaps hands, moves into the right position 
+// for reading in the back face of the cube's colors
+void Baxter::read_back() 
+{
+    if (this->count == 0) 
+    {
+        ROS_INFO("TURNING WRISTS...");
+        this->right_arm.turn_wrist_to(1.43);
+        this->count = 1;
+    }
+            
+    else if (this->arms_ready() && this->count == 1) 
+    {
+        if (first) ROS_INFO("GRABBING CUBE WITH LEFT ARM...");
+        float offset_y = this->left_arm.get_endpoint_y();
+             
+        if (offset_y > L_FIRM_HOLD) 
+        {
+            this->left_arm.adjust_endpoint_y(1);
+            if (this->left_iks.create_orders())
+                this->left_arm.move_to(this->left_iks.get_orders());
+        }
+          
+        else 
+        {
+            this->left_arm.gripper.grip();
+            ros::Duration(1.0).sleep();
+            this->right_arm.gripper.release();
+            this->first = false; 
+            this->count = 2;
+        } 
+    }
+
+    else if (this->arms_ready() && this->count == 2) 
+    {
+        if (first) ROS_INFO("RELEASING CUBE WITH RIGHT HAND...");
+        float offset_y = this->right_arm.get_endpoint_y();
+        ROS_INFO("\ty pos of endpoint is [%f]", offset_y);
+
+        if (offset_y > R_AWAY) 
+        {
+            this->right_arm.adjust_endpoint_y(1);
+            if (this->right_iks.create_orders())
+                this->right_arm.move_to(this->right_iks.get_orders());
+        }
+          
+        else 
+        {
+            this->first = false; 
+            this->count = 3;
+        } 
+    }
+
+    else if (this->arms_ready() && this->count == 3)
+    {
+        ROS_INFO("READING BACK FACE...");
+        this->reader.get_colors();
+        this->move_on("DONE FOR NOW...", READ_FRONT);
+    }
+}
+
+// READ FRONT FUNCTION
+// puts the cube in a position such that 
+// the front face can be read
+void Baxter::read_front()
+{
+    if (this->first) 
+    {
+        ROS_INFO("TURNING WRIST...");
+        this->left_arm.turn_wrist_to(-2.91);
+        this->first = false;
+    }
+
+    else if (this->arms_ready())
+    {
+        ROS_INFO("READING FRONT FACE...");
+        this->reader.get_colors();
+        this->move_on("DONE FOR NOW...", DONE);
     }
 }
 
 // RESET ARMS FUNCTION
-// sends both arms to the preset "home" position
-// and then moves on when done
+// brings arms back to initial position
 void Baxter::reset_arms() 
 {
     if (this->first) 
     { 
         ROS_INFO("RESETTING ARMS...");
-    
         this->left_arm.send_home();
-        this->right_arm.bring_center();
-    
-        first = false;
+        this->right_arm.send_home();
+        this->first = false;
     }
                 
-    else if (this->arms_ready()) move_on("ARMS RESET...", DONE); 
+    else if (this->arms_ready()) this->move_on("ARMS RESET...", DONE); 
 }
 
 ////////////////////////////////////////////////////////////////
