@@ -49,61 +49,81 @@ Arm::Arm(ros::NodeHandle handle, bool arm_side) : gripper(handle, arm_side)
     this->point_sub = handle.subscribe<baxter_core_msgs::EndpointState>(sub_topic, 10, &Arm::point_callback, this);
 }
 
-// MOVE TO FUNCTION
-// sets new orders
-// this causes baxter's arms to move
+// MOVE TO FUNCTION (integer argument)
+// calls one of the private functions preloaded 
+// with hardcoded joint states; moves the arms there
+void Arm::move_to(int hardcoded_state) 
+{
+    switch (hardcoded_state) 
+    {
+        case HOME:
+            this->send_home();
+            break;
+
+        case CENTER:
+            this->bring_center();
+            break;
+    }
+}
+
+// MOVE TO FUNCTION (joint command argument)
+// readies the arms, then sets the arm's orders to the new location
 void Arm::move_to(baxter_core_msgs::JointCommand new_order) 
 {
     this->get_ready();
     this->orders = new_order;
 }
 
-// TURN WRIST FUNCTION
-// turns baxter's wrist joint to change the orientation
-// of the grippers by a tiny bit in a direction given by the offset 
-void Arm::turn_wrist(float offset) 
+// TURN WRIST TO FUNCTION
+// brings wrist to a specified position
+void Arm::turn_wrist_to(float new_position, bool is_increment) 
 {
     float increment = 0.02;
-    if (offset < 0) increment*= -1;
-                  
-    baxter_core_msgs::JointCommand new_orders = this->orders;
+    if (new_position < 0) increment*= -1;
 
+    baxter_core_msgs::JointCommand new_orders = this->orders;
     for (size_t i = 0; i < new_orders.names.size(); i++)
     {
         string name = (arm_side == LEFT ? "left_w2" : "right_w2");
-        if (new_orders.names[i].find(name) != string::npos) new_orders.command[i]+= increment;
+        if (new_orders.names[i].find(name) != string::npos) 
+        {
+            if (is_increment) new_orders.command[i]+= increment; 
+            else new_orders.command[i] = new_position; 
+        }
     }
 
     this->move_to(new_orders);
 }
 
-// ADJUST ENDPOINT X FUNCTION
-// moves baxters arms slightly adjusting his x position over the cube 
-// by a tiny bit in a direction given by the offset until it is centered 
-void Arm::adjust_endpoint_x(float offset) 
+// ADJUST ENDPOINT FUNCTION
+// sets the position in the given direction of the endpoint 
+// to a specified value, or if increment is true, adjusts 
+// the position of the arm slightly in the specified direction
+void Arm::adjust_endpoint(int direction, float new_position, bool is_increment) 
 {
     float increment = 0.01;
-    if (offset > 0) increment*= -1;
+    if (new_position > 0) increment*= -1;
 
-    // changing "y" in x function because it translates to
-    // movement in the "y direction" of the resulting image
     geometry_msgs::Pose new_pose = this->endpoint;
-    new_pose.position.x+= increment;
-    this->point_pub.publish(new_pose);
-}
 
-// ADJUST ENDPOINT Y FUNCTION
-// moves baxters arms slightly adjusting his x position over the cube 
-// by a tiny bit in a direction given by the offset until it is centered 
-void Arm::adjust_endpoint_y(float offset) 
-{
-    float increment = 0.01;
-    if (offset > 0) increment*= -1;
+    switch(direction) 
+    {
+        case X:
+            if (is_increment) new_pose.position.x+= increment;
+            else new_pose.position.x = new_position;
+            break;
 
-    // changing "x" in y function because it translates to
-    // movement in the "y direction" of the resulting image
-    geometry_msgs::Pose new_pose = this->endpoint;
-    new_pose.position.y+= increment;
+        case Y:
+            if (is_increment) new_pose.position.y+= increment;
+            else new_pose.position.y = new_position;
+            break;
+
+        case Z:
+            if (is_increment) new_pose.position.z+= increment;
+            else new_pose.position.z = new_position;
+            break;
+    }
+
     this->point_pub.publish(new_pose);
 }
 
@@ -127,6 +147,117 @@ void Arm::lower_arm()
     else new_pose.position.z = positions[3];
         
     this->point_pub.publish(new_pose);
+}
+
+// MAKE ENDPOINTS PERPENDICULAR
+// Adjusts the endpoints of the "bring center" function, 
+// ensuring the endpoints are perpendicular
+void Arm::make_endpoints_perpendicular() 
+{
+    geometry_msgs::Point point;
+    point.x = 0.60;  
+    point.y = 0.05; 
+    point.z = 0.65; 
+
+    geometry_msgs::Quaternion quaternion;
+    quaternion.x =  0.000;  
+    quaternion.y =  0.707;  
+    quaternion.z =  0.707;
+    quaternion.w =  0.000; 
+   
+    if (this->arm_side == LEFT) 
+    {
+        point.y = 0.02;
+        quaternion.z*= -1.0;
+    }
+
+    geometry_msgs::Pose new_pose;
+    new_pose.position = point;
+    new_pose.orientation = quaternion;
+
+    this->point_pub.publish(new_pose);
+}
+
+//////////////////////////////////////////////////////////////
+
+// Private Helper Functions & Callbacks
+
+// JOINT CALLBACK FUNCTION
+// updates the current positions of the joints
+// if not in accordance with the orders, publish commands
+void Arm::joint_callback(const sensor_msgs::JointStateConstPtr& msg) 
+{
+    this->joints_initialized = true;
+
+    this->current_joint_positions.clear();
+    for (size_t i = 0; i < msg->position.size(); i++)
+    {
+        string side = (arm_side == LEFT ? "left" : "right");
+        if (msg->name[i].find(side) != string::npos) this->current_joint_positions.push_back(msg->position[i]);
+    }
+
+    if (this->ready_ && !this->is_positioned()) 
+    {
+        this->done_ = false;
+        this->order_pub.publish(this->orders);
+    }
+
+    else if (this->ready_ && this->is_positioned()) 
+    {
+        this->done_ = true;
+        this->ready_ = false;
+    }
+}
+
+// POINT CALLBACK FUNCTION
+// updates the current endpoint of the arm
+void Arm::point_callback(const baxter_core_msgs::EndpointStateConstPtr& msg) 
+{
+    this->point_initialized = true;
+    this->endpoint = msg->pose;
+}
+
+// INIT FUNCTION
+// common code in constructors
+// sets all bools to false
+void Arm::init() 
+{
+    this->joints_initialized = false;
+    this->point_initialized = false;
+    this->ready_ = false;
+    this->done_ = false;
+}
+
+// GET READY FUNCTION
+// flips the necessary state bools of the arm
+// which will prepare the joints to make a movement
+void Arm::get_ready() 
+{
+    this->ready_ = true;
+    this->done_ = false;
+}
+
+// IS POSITIONED FUNCTION
+// checks to see if the current positions of the joints
+// is in accordance with the orders
+bool Arm::is_positioned() 
+{
+    for(size_t i = 0; i < this->orders.command.size(); i++)
+    {
+        if (fabs(this->orders.command[i] - this->current_joint_positions[i]) > 0.01 )
+        {
+            /* 
+            ROS_INFO("\tmoving %s from [%f] to [%f]", 
+                  orders.names[i].c_str(), 
+                  this->current_joint_positions[i], 
+                  this->orders.command[i]);
+            */
+            return false;
+        }
+    }
+
+    //ROS_INFO("\trepositioned...");
+    return true;
 }
 
 // SEND HOME
@@ -231,142 +362,6 @@ void Arm::bring_center()
     new_orders.command[5] = 1.25;
     new_orders.command[6] = 0.0;
     */
-
-}
-
-// MAKE ENDPOINTS PERPENDICULAR
-// Adjusts the endpoints of the "bring center" function, 
-// ensuring the endpoints are perpendicular
-void Arm::make_endpoints_perpendicular() 
-{
-    geometry_msgs::Point point;
-    point.x = 0.60;  
-    point.y = 0.05; 
-    point.z = 0.65; 
-
-    geometry_msgs::Quaternion quaternion;
-    quaternion.x =  0.000;  
-    quaternion.y =  0.707;  
-    quaternion.z =  0.707;
-    quaternion.w =  0.000; 
-   
-    if (this->arm_side == LEFT) 
-    {
-        point.y = 0.02;
-        quaternion.z*= -1.0;
-    }
-
-    geometry_msgs::Pose new_pose;
-    new_pose.position = point;
-    new_pose.orientation = quaternion;
-
-    this->point_pub.publish(new_pose);
-}
-
-// ADJUST Y FUNCTION
-// sets the y position of the endpoint to a specified value
-void Arm::adjust_y(float new_position) 
-{
-    geometry_msgs::Pose new_pose = this->endpoint;
-    new_pose.position.y = new_position;
-    this->point_pub.publish(new_pose);
-}
-
-// TURN WRIST TO FUNCTION
-// brings wrist to a specified position
-void Arm::turn_wrist_to(float new_position) 
-{
-    baxter_core_msgs::JointCommand new_orders = this->orders;
-    for (size_t i = 0; i < new_orders.names.size(); i++)
-    {
-        string name = (arm_side == LEFT ? "left_w2" : "right_w2");
-        if (new_orders.names[i].find(name) != string::npos) 
-            new_orders.command[i] = new_position; 
-    }
-
-    this->move_to(new_orders);
-}
-
-//////////////////////////////////////////////////////////////
-
-// Private Helper Functions & Callbacks
-
-// JOINT CALLBACK FUNCTION
-// updates the current positions of the joints
-// if not in accordance with the orders, publish commands
-void Arm::joint_callback(const sensor_msgs::JointStateConstPtr& msg) 
-{
-    this->joints_initialized = true;
-
-    this->current_joint_positions.clear();
-    for (size_t i = 0; i < msg->position.size(); i++)
-    {
-        string side = (arm_side == LEFT ? "left" : "right");
-        if (msg->name[i].find(side) != string::npos) this->current_joint_positions.push_back(msg->position[i]);
-    }
-
-    if (this->ready_ && !this->is_positioned()) 
-    {
-        this->done_ = false;
-        this->order_pub.publish(this->orders);
-    }
-
-    else if (this->ready_ && this->is_positioned()) 
-    {
-        this->done_ = true;
-        this->ready_ = false;
-    }
-}
-
-// POINT CALLBACK FUNCTION
-// updates the current endpoint of the arm
-void Arm::point_callback(const baxter_core_msgs::EndpointStateConstPtr& msg) 
-{
-    this->point_initialized = true;
-    this->endpoint = msg->pose;
-}
-
-// INIT FUNCTION
-// common code in constructors
-// sets all bools to false
-void Arm::init() 
-{
-    this->joints_initialized = false;
-    this->point_initialized = false;
-    this->ready_ = false;
-    this->done_ = false;
-}
-
-// GET READY FUNCTION
-// flips the necessary state bools of the arm
-// which will prepare the joints to make a movement
-void Arm::get_ready() 
-{
-    this->ready_ = true;
-    this->done_ = false;
-}
-
-// IS POSITIONED FUNCTION
-// checks to see if the current positions of the joints
-// is in accordance with the orders
-bool Arm::is_positioned() 
-{
-    for(size_t i = 0; i < this->orders.command.size(); i++)
-    {
-        if (fabs(this->orders.command[i] - this->current_joint_positions[i]) > 0.01 )
-        {
-            /* 
-            ROS_INFO("\tmoving %s from [%f] to [%f]", 
-                  orders.names[i].c_str(), 
-                  this->current_joint_positions[i], 
-                  this->orders.command[i]);
-            */
-            return false;
-        }
-    }
-
-    //ROS_INFO("\trepositioned...");
-    return true;
 }
 
 //////////////////////////////////////////////////////////////

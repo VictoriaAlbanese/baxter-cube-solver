@@ -128,8 +128,8 @@ void Baxter::initialize_arms()
         if (this->first) 
         { 
             ROS_INFO("INITIALIZING ARMS...");
-            this->left_arm.send_home();
-            this->right_arm.send_home();
+            this->left_arm.move_to(HOME);
+            this->right_arm.move_to(HOME);
             if (!this->left_arm.gripper.calibrated()) this->left_arm.gripper.calibrate();
             if (!this->right_arm.gripper.calibrated()) this->right_arm.gripper.calibrate();
             this->left_arm.gripper.release();
@@ -191,8 +191,6 @@ void Baxter::fix_orientation()
 { 
     if (this->detector.get_num_squares() != 0) 
     {
-        float offset, abs_offset;
-
         if (this->first) 
         {
             ROS_INFO("FIXING ORIENTATION...");
@@ -201,12 +199,11 @@ void Baxter::fix_orientation()
             this->first = false;
         }
  
-        offset = this->detector.get_angular_offset();
-        abs_offset = fabs(offset);
+        float offset = this->detector.get_angular_offset();
         ROS_INFO("\toffset is [%f] degrees", offset);
         ros::Duration(0.1).sleep();
         
-        if (abs_offset < 58.0 || abs_offset > 62.0) this->right_arm.turn_wrist(offset);
+        if (fabs(offset) < 58.0 || fabs(offset) > 62.0) this->right_arm.turn_wrist_to(offset, true);
         else this->move_on("ORIENTATION FIXED...", FIX_POSITION); 
     }
 }
@@ -219,8 +216,6 @@ void Baxter::fix_position()
 {
     if (this->detector.get_num_squares() !=0) 
     {
-        float offset_x, offset_y;
-        
         if (this->first) 
         {
             ROS_INFO("FIXING POSITION...");
@@ -229,21 +224,22 @@ void Baxter::fix_position()
             this-> first = false;
         }
 
-        offset_x = this->detector.get_x_offset();
-        offset_y = this->detector.get_y_offset();
+        // xy directions are swapped from baxter to image
+        float offset_x = this->detector.get_y_offset();
+        float offset_y = this->detector.get_x_offset();
         ROS_INFO("\toffset is (%f, %f)", offset_x, offset_y);
-        ros::Duration(0.1).sleep();
+        ros::Duration(0.2).sleep();
 
         if (fabs(offset_x) > 10) 
         {
-            this->right_arm.adjust_endpoint_y(offset_x); // xy directions are swapped from baxter to image
+            this->right_arm.adjust_endpoint(X, offset_x, true);
             if (this->right_iks.create_orders())
                 this->right_arm.move_to(this->right_iks.get_orders());
         }
 
         else if (fabs(offset_y) > 10) 
         {
-            this->right_arm.adjust_endpoint_x(offset_y); // xy directions are swapped from baxter to image
+            this->right_arm.adjust_endpoint(Y, offset_y, true);
             if (this->right_iks.create_orders())
                 this->right_arm.move_to(this->right_iks.get_orders());
         }
@@ -302,8 +298,8 @@ void Baxter::read_bottom()
     if (this->count == 0) 
     {
         ROS_INFO("LIFTING ARMS...");
-        this->left_arm.bring_center();
-        this->right_arm.bring_center();
+        this->left_arm.move_to(CENTER);
+        this->right_arm.move_to(CENTER);
         this->count = 1;
     }
 
@@ -376,7 +372,7 @@ void Baxter::read_back()
              
         if (offset_y > L_FIRM_HOLD) 
         {
-            this->left_arm.adjust_endpoint_y(1);
+            this->left_arm.adjust_endpoint(Y, 1, true);
             if (this->left_iks.create_orders())
                 this->left_arm.move_to(this->left_iks.get_orders());
         }
@@ -395,11 +391,10 @@ void Baxter::read_back()
     {
         if (first) ROS_INFO("RELEASING CUBE WITH RIGHT HAND...");
         float offset_y = this->right_arm.get_endpoint_y();
-        ROS_INFO("\ty pos of endpoint is [%f]", offset_y);
 
         if (offset_y > R_AWAY) 
         {
-            this->right_arm.adjust_endpoint_y(1);
+            this->right_arm.adjust_endpoint(Y, 1, true);
             if (this->right_iks.create_orders())
                 this->right_arm.move_to(this->right_iks.get_orders());
         }
@@ -435,7 +430,7 @@ void Baxter::read_front()
     {
         ROS_INFO("READING FRONT FACE...");
         this->reader.get_colors();
-        this->move_on("DONE FOR NOW...", DONE);
+        this->move_on("DONE FOR NOW...", TEARDOWN);
     }
 }
 
@@ -446,8 +441,8 @@ void Baxter::reset_arms()
     if (this->first) 
     { 
         ROS_INFO("RESETTING ARMS...");
-        this->left_arm.send_home();
-        this->right_arm.send_home();
+        this->left_arm.move_to(HOME);
+        this->right_arm.move_to(HOME);
         this->first = false;
     }
                 
