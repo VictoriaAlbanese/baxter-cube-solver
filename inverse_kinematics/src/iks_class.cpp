@@ -117,17 +117,6 @@ void IKS::get_iks()
         exit(1);
     }
 
-    ROS_INFO("p(%f, %f, %f)", 
-	    this->endpoint.get_point().x, 
-	    this->endpoint.get_point().y, 
-	    this->endpoint.get_point().z);
-
-    ROS_INFO("q(%f, %f, %f, %f)", 
-	    this->endpoint.get_q().x, 
-	    this->endpoint.get_q().y, 
-	    this->endpoint.get_q().z,
-        this->endpoint.get_q().w);
-
     this->solved_state = this->service.response.joints[0];
 }
 

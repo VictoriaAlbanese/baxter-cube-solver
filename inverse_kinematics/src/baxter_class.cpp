@@ -305,7 +305,7 @@ void Baxter::read_bottom()
 
     else if (this->arms_ready() && this->count == 1) 
     { 
-        this->right_arm.make_endpoints_perpendicular();
+        this->right_arm.set_endpoint(P_CENTER);
         if (this->right_iks.create_orders()) 
         {
             ROS_INFO("ADJUSTING RIGHT ARM...");
@@ -316,7 +316,7 @@ void Baxter::read_bottom()
 
     else if (this->arms_ready() && this->count == 2) 
     { 
-        this->left_arm.make_endpoints_perpendicular();
+        this->left_arm.set_endpoint(P_CENTER);
         if (this->left_iks.create_orders()) 
         {
             ROS_INFO("ADJUSTING LEFT ARM...");

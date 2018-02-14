@@ -127,6 +127,34 @@ void Arm::adjust_endpoint(int direction, float new_position, bool is_increment)
     this->point_pub.publish(new_pose);
 }
 
+// SET ENDPOINT FUNCTION (integer argument)
+// calls one of the private functions preloaded
+// with a hardcoded endpoint; moves the arms there
+void Arm::set_endpoint(int hardcoded_state) 
+{
+    geometry_msgs::Pose new_pose;
+    
+    switch(hardcoded_state) 
+    {
+        case P_CENTER:
+            new_pose = this->center_perpendicularly();
+            break;
+    }
+
+    this->point_pub.publish(new_pose);
+}
+
+// SET ENDPOINT FUNCTION (geometry_msgs arguments)
+// sets the endpoint of the arms
+void Arm::set_endpoint(geometry_msgs::Point point, geometry_msgs::Quaternion quaternion) 
+{
+    geometry_msgs::Pose new_pose;
+    new_pose.position = point;
+    new_pose.orientation = quaternion;
+
+    this->point_pub.publish(new_pose);
+}
+
 // LOWER ARM FUNCTION
 // lowers baxter's arm a bit
 void Arm::lower_arm() 
@@ -137,45 +165,14 @@ void Arm::lower_arm()
     if (fabs(new_pose.position.z - positions[0]) < fabs(new_pose.position.z - positions[1])
      && fabs(new_pose.position.z - positions[0]) < fabs(new_pose.position.z - positions[2])
      && fabs(new_pose.position.z - positions[0]) < fabs(new_pose.position.z - positions[3]))
-        new_pose.position.z = positions[1];
+        adjust_endpoint(Z, positions[1]);
 
     else if (fabs(new_pose.position.z - positions[1]) < fabs(new_pose.position.z - positions[0])
           && fabs(new_pose.position.z - positions[1]) < fabs(new_pose.position.z - positions[2])
           && fabs(new_pose.position.z - positions[1]) < fabs(new_pose.position.z - positions[3]))
-        new_pose.position.z = positions[2];
+        adjust_endpoint(Z, positions[2]);
 
-    else new_pose.position.z = positions[3];
-        
-    this->point_pub.publish(new_pose);
-}
-
-// MAKE ENDPOINTS PERPENDICULAR
-// Adjusts the endpoints of the "bring center" function, 
-// ensuring the endpoints are perpendicular
-void Arm::make_endpoints_perpendicular() 
-{
-    geometry_msgs::Point point;
-    point.x = 0.60;  
-    point.y = 0.05; 
-    point.z = 0.65; 
-
-    geometry_msgs::Quaternion quaternion;
-    quaternion.x =  0.000;  
-    quaternion.y =  0.707;  
-    quaternion.z =  0.707;
-    quaternion.w =  0.000; 
-   
-    if (this->arm_side == LEFT) 
-    {
-        point.y = 0.02;
-        quaternion.z*= -1.0;
-    }
-
-    geometry_msgs::Pose new_pose;
-    new_pose.position = point;
-    new_pose.orientation = quaternion;
-
-    this->point_pub.publish(new_pose);
+    else adjust_endpoint(Z, positions[3]);
 }
 
 //////////////////////////////////////////////////////////////
@@ -362,6 +359,52 @@ void Arm::bring_center()
     new_orders.command[5] = 1.25;
     new_orders.command[6] = 0.0;
     */
+}
+
+// CENETERS ARMS PERPENDICULARLY FUNCTION
+// adjusts the endpoints of the results of the "bring 
+// center" function, ensuring the endpoints are perpendicular
+geometry_msgs::Pose Arm::center_perpendicularly()
+{
+    geometry_msgs::Point point = this->set_p(0.60, 0.05, 0.65); 
+    geometry_msgs::Quaternion quaternion = this->set_q(0.000, 0.707, 0.707, 0.000); 
+   
+    if (this->arm_side == LEFT) 
+    {
+        point.y = 0.02;
+        quaternion.z*= -1.0;
+    }
+
+    geometry_msgs::Pose pose;
+    pose.position = point;
+    pose.orientation = quaternion;
+
+    return pose;
+}
+
+// SET P FUNCTION
+// nice point constructor 
+geometry_msgs::Point Arm::set_p(float new_x, float new_y, float new_z) 
+{
+    geometry_msgs::Point p;
+    p.x = new_x;
+    p.y = new_y;
+    p.z = new_z;
+
+    return p;
+}
+
+// SET Q FUNCTION
+// nice quaternion constructor
+geometry_msgs::Quaternion Arm::set_q(float new_x, float new_y, float new_z, float new_w) 
+{
+    geometry_msgs::Quaternion q;
+    q.x = new_x;
+    q.y = new_y;
+    q.z = new_z;
+    q.w = new_w;
+
+    return q;
 }
 
 //////////////////////////////////////////////////////////////

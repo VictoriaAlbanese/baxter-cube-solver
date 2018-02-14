@@ -31,6 +31,7 @@
 
 #define HOME 1
 #define CENTER 2
+#define P_CENTER 3
 
 #define X 1
 #define Y 2
@@ -67,6 +68,9 @@ class Arm
         bool is_positioned();
         void send_home(); 
         void bring_center(); 
+        geometry_msgs::Pose center_perpendicularly(); 
+        geometry_msgs::Point set_p(float new_x, float new_y, float new_z);
+        geometry_msgs::Quaternion set_q(float new_x, float new_y, float new_z, float new_w);
 
     public:
 
@@ -87,9 +91,10 @@ class Arm
         void move_to(baxter_core_msgs::JointCommand new_order);
         void turn_wrist_to(float new_position, bool is_increment = false);
        
+        void set_endpoint(int hardcoded_state);
+        void set_endpoint(geometry_msgs::Point point, geometry_msgs::Quaternion quaternion);
         void adjust_endpoint(int direction, float new_position, bool is_increment = false);
         void lower_arm();
-        void make_endpoints_perpendicular();
 };
 
 #endif // ARM_CLASS_HPP
