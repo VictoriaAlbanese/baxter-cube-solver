@@ -72,8 +72,6 @@ class Baxter
         FaceDisplay display;
         Arm left_arm;
         Arm right_arm;
-        IKS left_iks;
-        IKS right_iks;
         SquareDetector detector;
         ColorReader reader;
 

@@ -27,8 +27,6 @@ Baxter::Baxter(ros::NodeHandle handle)
    : display(handle)
    , left_arm(handle, LEFT) 
    , right_arm(handle, RIGHT)
-   , left_iks(handle, LEFT)
-   , right_iks(handle, RIGHT)
    , detector(handle) 
    , reader(handle)
 {
@@ -111,7 +109,8 @@ void Baxter::inspect_cube()
 void Baxter::move_on(string message, int new_state) 
 {
     ROS_INFO("%s", message.c_str());
-    this->right_iks.uninitialize();
+    this->left_arm.iks.uninitialize();
+    this->right_arm.iks.uninitialize();
     this->state = new_state;
     this->first = true;
     this->count = 0;
@@ -152,9 +151,8 @@ void Baxter::initialize_arms()
 // and moves the arm over it, moving on when done
 void Baxter::find_cube() 
 {
-    if (this->first && this->right_iks.create_orders()) 
+    if (this->first && this->right_arm.move_to(ENDPOINT)) 
     {
-        this->right_arm.move_to(this->right_iks.get_orders());
         this->display.make_face(HAPPY);
         this->first = false;
     }
@@ -170,7 +168,7 @@ void Baxter::check_squares()
 { 
     if (this->detector.get_num_squares() != 0) 
     {
-        this->right_iks.kill_cloud();
+        this->right_arm.iks.kill_cloud();
         this->move_on("SQUARES DETECTED...", FIX_ORIENTATION); 
     } 
    
@@ -228,20 +226,18 @@ void Baxter::fix_position()
         float offset_x = this->detector.get_y_offset();
         float offset_y = this->detector.get_x_offset();
         ROS_INFO("\toffset is (%f, %f)", offset_x, offset_y);
-        ros::Duration(0.2).sleep();
+        ros::Duration(0.5).sleep();
 
         if (fabs(offset_x) > 10) 
         {
             this->right_arm.adjust_endpoint(X, offset_x, true);
-            if (this->right_iks.create_orders())
-                this->right_arm.move_to(this->right_iks.get_orders());
+            this->right_arm.move_to(ENDPOINT);
         }
 
         else if (fabs(offset_y) > 10) 
         {
             this->right_arm.adjust_endpoint(Y, offset_y, true);
-            if (this->right_iks.create_orders())
-                this->right_arm.move_to(this->right_iks.get_orders());
+            this->right_arm.move_to(ENDPOINT);
         }
 
         else this->move_on("POSITION FIXED...", LOWERING); 
@@ -257,10 +253,9 @@ void Baxter::lower_arm()
     if (this->first)
     {
         this->right_arm.lower_arm();
-        if (this->right_iks.create_orders())
+        if (this->right_arm.move_to(ENDPOINT))
         {
             ROS_INFO("LOWERING ARM...");
-            this->right_arm.move_to(this->right_iks.get_orders());
             this->first = false;
         }
     }
@@ -279,6 +274,7 @@ void Baxter::grab_cube()
     if (this->first) 
     { 
         ROS_INFO("GRABBING CUBE...");
+        ros::Duration(1.0).sleep();
         this->right_arm.gripper.grip();
         this->display.make_face(HAPPY);
         this->first = false;
@@ -306,10 +302,9 @@ void Baxter::read_bottom()
     else if (this->arms_ready() && this->count == 1) 
     { 
         this->right_arm.set_endpoint(P_CENTER);
-        if (this->right_iks.create_orders()) 
+        if (this->right_arm.move_to(ENDPOINT)) 
         {
             ROS_INFO("ADJUSTING RIGHT ARM...");
-            this->right_arm.move_to(this->right_iks.get_orders());
             this->count = 2;
         }
     }
@@ -317,10 +312,9 @@ void Baxter::read_bottom()
     else if (this->arms_ready() && this->count == 2) 
     { 
         this->left_arm.set_endpoint(P_CENTER);
-        if (this->left_iks.create_orders()) 
+        if (this->left_arm.move_to(ENDPOINT)) 
         {
             ROS_INFO("ADJUSTING LEFT ARM...");
-            this->left_arm.move_to(this->left_iks.get_orders());
             this->count = 3;
         }
     }
@@ -367,14 +361,18 @@ void Baxter::read_back()
             
     else if (this->arms_ready() && this->count == 1) 
     {
-        if (first) ROS_INFO("GRABBING CUBE WITH LEFT ARM...");
+        if (this->first) 
+        {
+            ROS_INFO("GRABBING CUBE WITH LEFT ARM...");
+            this->first = false;
+        }
+
         float offset_y = this->left_arm.get_endpoint_y();
-             
+        
         if (offset_y > L_FIRM_HOLD) 
         {
             this->left_arm.adjust_endpoint(Y, 1, true);
-            if (this->left_iks.create_orders())
-                this->left_arm.move_to(this->left_iks.get_orders());
+            this->left_arm.move_to(ENDPOINT);
         }
           
         else 
@@ -389,14 +387,18 @@ void Baxter::read_back()
 
     else if (this->arms_ready() && this->count == 2) 
     {
-        if (first) ROS_INFO("RELEASING CUBE WITH RIGHT HAND...");
+        if (this->first) 
+        {
+            ROS_INFO("RELEASING CUBE WITH RIGHT HAND...");
+            this->first = false;
+        }
+
         float offset_y = this->right_arm.get_endpoint_y();
 
         if (offset_y > R_AWAY) 
         {
             this->right_arm.adjust_endpoint(Y, 1, true);
-            if (this->right_iks.create_orders())
-                this->right_arm.move_to(this->right_iks.get_orders());
+            this->right_arm.move_to(ENDPOINT);
         }
           
         else 

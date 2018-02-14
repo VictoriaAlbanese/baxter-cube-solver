@@ -17,7 +17,9 @@
 // DEFAULT CONSTRUCTOR
 // does not initialize ros
 // makes a right arm by default
-Arm::Arm() : gripper() 
+Arm::Arm() 
+    : gripper() 
+    , iks()
 {
     this->init();
     this->arm_side = RIGHT;
@@ -26,7 +28,9 @@ Arm::Arm() : gripper()
 // CONSTRUCTOR
 // does the ros initialization and 
 // calibrates/opens the gripper if necessary 
-Arm::Arm(ros::NodeHandle handle, bool arm_side) : gripper(handle, arm_side)
+Arm::Arm(ros::NodeHandle handle, bool arm_side) 
+    : gripper(handle, arm_side)
+    , iks(handle, arm_side)
 {
     this->init();
     this->arm_side = arm_side;
@@ -52,10 +56,17 @@ Arm::Arm(ros::NodeHandle handle, bool arm_side) : gripper(handle, arm_side)
 // MOVE TO FUNCTION (integer argument)
 // calls one of the private functions preloaded 
 // with hardcoded joint states; moves the arms there
-void Arm::move_to(int hardcoded_state) 
+bool Arm::move_to(int hardcoded_state) 
 {
+    bool success = true;
+
     switch (hardcoded_state) 
     {
+        case ENDPOINT:
+           if (!this->iks.create_orders()) success = false;
+           else this->move_to(this->iks.get_orders());
+           break;
+
         case HOME:
             this->send_home();
             break;
@@ -64,6 +75,8 @@ void Arm::move_to(int hardcoded_state)
             this->bring_center();
             break;
     }
+
+    return success;
 }
 
 // MOVE TO FUNCTION (joint command argument)

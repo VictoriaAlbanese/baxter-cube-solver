@@ -45,7 +45,6 @@ void Endpoint::callback(const geometry_msgs::Pose::ConstPtr& msg)
 {
     this->initialize_pose();
     this->endpoint.pose = *msg;
-    ROS_INFO("p(%f, %f, %f)", endpoint.pose.position.x, endpoint.pose.position.y, endpoint.pose.position.z);
     this->initialized_ = true;
 }
 

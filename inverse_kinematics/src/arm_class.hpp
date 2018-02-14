@@ -25,14 +25,12 @@
 
 #define LEFT 0
 #define RIGHT 1
-
 #define CW 0
 #define CCW 1
-
+#define ENDPOINT 666
 #define HOME 1
 #define CENTER 2
 #define P_CENTER 3
-
 #define X 1
 #define Y 2
 #define Z 3
@@ -76,6 +74,7 @@ class Arm
 
         // members
         Gripper gripper;
+        IKS iks;
 
         // functions
         Arm();
@@ -87,7 +86,7 @@ class Arm
         float get_endpoint_y() { return this->endpoint.position.y; };
         float get_endpoint_z() { return this->endpoint.position.z; };
       	
-        void move_to(int hardcoded_state);
+        bool move_to(int hardcoded_state);
         void move_to(baxter_core_msgs::JointCommand new_order);
         void turn_wrist_to(float new_position, bool is_increment = false);
        
