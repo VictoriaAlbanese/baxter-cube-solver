@@ -168,26 +168,6 @@ void Arm::set_endpoint(geometry_msgs::Point point, geometry_msgs::Quaternion qua
     this->point_pub.publish(new_pose);
 }
 
-// LOWER ARM FUNCTION
-// lowers baxter's arm a bit
-void Arm::lower_arm() 
-{
-    float positions[4] = { 0.1, 0.0, -0.07, -0.13 };
-    geometry_msgs::Pose new_pose = this->endpoint;
-      
-    if (fabs(new_pose.position.z - positions[0]) < fabs(new_pose.position.z - positions[1])
-     && fabs(new_pose.position.z - positions[0]) < fabs(new_pose.position.z - positions[2])
-     && fabs(new_pose.position.z - positions[0]) < fabs(new_pose.position.z - positions[3]))
-        adjust_endpoint(Z, positions[1]);
-
-    else if (fabs(new_pose.position.z - positions[1]) < fabs(new_pose.position.z - positions[0])
-          && fabs(new_pose.position.z - positions[1]) < fabs(new_pose.position.z - positions[2])
-          && fabs(new_pose.position.z - positions[1]) < fabs(new_pose.position.z - positions[3]))
-        adjust_endpoint(Z, positions[2]);
-
-    else adjust_endpoint(Z, positions[3]);
-}
-
 //////////////////////////////////////////////////////////////
 
 // Private Helper Functions & Callbacks

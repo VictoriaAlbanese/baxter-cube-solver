@@ -20,8 +20,8 @@
 #include <sensor_msgs/image_encodings.h>
 
 #define THRESH 50
-#define X_DESIRED 375
-#define Y_DESIRED 150
+#define X_DESIRED 340
+#define Y_DESIRED 120
 #define SD_WINDOW_NAME "Square Detector"
 
 using namespace cv;

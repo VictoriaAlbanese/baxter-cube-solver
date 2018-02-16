@@ -113,7 +113,6 @@ void Baxter::move_on(string message, int new_state)
     this->right_arm.iks.uninitialize();
     this->state = new_state;
     this->first = true;
-    this->count = 0;
 }
     	   
 // INITIALIZE ARMS FUNCTION
@@ -168,12 +167,14 @@ void Baxter::check_squares()
 { 
     if (this->detector.get_num_squares() != 0) 
     {
+        this->count = 0;
         this->right_arm.iks.kill_cloud();
         this->move_on("SQUARES DETECTED...", FIX_ORIENTATION); 
     } 
    
     else if (this->count == 40)
     {
+        this->count = 0;
         this->display.make_face(SAD);
         this->move_on("NO SQUARES DETECTED...", INITIALIZE); 
     }
@@ -226,7 +227,7 @@ void Baxter::fix_position()
         float offset_x = this->detector.get_y_offset();
         float offset_y = this->detector.get_x_offset();
         ROS_INFO("\toffset is (%f, %f)", offset_x, offset_y);
-        ros::Duration(0.5).sleep();
+        ros::Duration(0.4).sleep();
 
         if (fabs(offset_x) > 10) 
         {
@@ -252,18 +253,45 @@ void Baxter::lower_arm()
 {
     if (this->first)
     {
-        this->right_arm.lower_arm();
+        ROS_INFO("LOWERING ARM...");
+        
+        float positions[3] = { 0.02, -0.06, -0.14 };
+        float my_position = this->right_arm.get_endpoint_z();
+        float goal = positions[this->count];
+
+        ROS_INFO("%f, %f", my_position, goal);
+
+        if (my_position > goal) 
+        {
+            this->right_arm.adjust_endpoint(Z, 1, true);
+            this->right_arm.move_to(ENDPOINT);
+            ros::Duration(0.4).sleep(); 
+        }
+
+        else this->first = false;
+
+        /*this->right_arm.lower_arm();
         if (this->right_arm.move_to(ENDPOINT))
         {
             ROS_INFO("LOWERING ARM...");
             this->first = false;
-        }
+        }*/
     }
         
     else if (this->arms_ready()) 
     {
-        if (this->right_arm.ready_for_pickup()) this->move_on("READY FOR PICKUP...", PICKUP); 
-        else this->move_on("ARM LOWERED...", FIX_ORIENTATION); 
+        if (this->right_arm.ready_for_pickup()) 
+        {
+            this->move_on("READY FOR PICKUP...", PICKUP); 
+            this->count = 0;
+        }
+
+        else 
+        {
+            this->move_on("ARM LOWERED...", FIX_ORIENTATION); 
+            ROS_INFO("distance from cube: %f", this->right_arm.gripper.get_range());
+            this->count++;
+        }
     }
 }
 
@@ -274,9 +302,11 @@ void Baxter::grab_cube()
     if (this->first) 
     { 
         ROS_INFO("GRABBING CUBE...");
+
         ros::Duration(1.0).sleep();
         this->right_arm.gripper.grip();
         this->display.make_face(HAPPY);
+
         this->first = false;
     }
             
@@ -321,6 +351,7 @@ void Baxter::read_bottom()
 
     else if (this->left_arm.done() && count == 3) 
     {
+        this->count = 0;
         ROS_INFO("READING BOTTOM FACE...");
         this->reader.get_colors();
         this->move_on("BOTTOM FACE READ...", READ_TOP); 
@@ -355,7 +386,7 @@ void Baxter::read_back()
     if (this->count == 0) 
     {
         ROS_INFO("TURNING WRISTS...");
-        this->right_arm.turn_wrist_to(1.43);
+        this->right_arm.turn_wrist_to(-1.7);
         this->count = 1;
     }
             
@@ -410,6 +441,7 @@ void Baxter::read_back()
 
     else if (this->arms_ready() && this->count == 3)
     {
+        this->count = 0;
         ROS_INFO("READING BACK FACE...");
         this->reader.get_colors();
         this->move_on("DONE FOR NOW...", READ_FRONT);

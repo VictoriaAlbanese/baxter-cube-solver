@@ -93,7 +93,6 @@ class Arm
         void set_endpoint(int hardcoded_state);
         void set_endpoint(geometry_msgs::Point point, geometry_msgs::Quaternion quaternion);
         void adjust_endpoint(int direction, float new_position, bool is_increment = false);
-        void lower_arm();
 };
 
 #endif // ARM_CLASS_HPP

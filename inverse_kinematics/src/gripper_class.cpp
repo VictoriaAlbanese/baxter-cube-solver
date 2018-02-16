@@ -31,15 +31,20 @@ Gripper::Gripper(ros::NodeHandle handle, bool arm_side)
     this->init();
     this->arm_side = arm_side;
 
-    string sub_topic;
-    if (this->arm_side == LEFT) sub_topic = "robot/end_effector/left_gripper/state";
-    else sub_topic = "robot/end_effector/right_gripper/state";
+    string state_sub_topic;
+    if (this->arm_side == LEFT) state_sub_topic = "robot/end_effector/left_gripper/state";
+    else state_sub_topic = "robot/end_effector/right_gripper/state";
+
+    string ir_sub_topic;
+    if (this->arm_side == LEFT) ir_sub_topic = "robot/range/left_hand_range/state";
+    else ir_sub_topic = "robot/range/right_hand_range/state";
 
     string pub_topic;
     if (this->arm_side == LEFT) pub_topic = "robot/end_effector/left_gripper/command";
     else pub_topic = "robot/end_effector/right_gripper/command";
 
-    this->subscriber = handle.subscribe(sub_topic, 10, &Gripper::callback, this);
+    this->state_sub = handle.subscribe(state_sub_topic, 10, &Gripper::state_callback, this);
+    this->ir_sub = handle.subscribe(ir_sub_topic, 10, &Gripper::ir_callback, this);
     this->publisher = handle.advertise<baxter_core_msgs::EndEffectorCommand>(pub_topic, 10);
 }
 
@@ -77,18 +82,24 @@ void Gripper::release()
 
 // Private Members & Callbacks
 
-// CALLBACK FUNCTION
-// initializes gripper fields
-void Gripper::callback(const baxter_core_msgs::EndEffectorState::ConstPtr& msg) 
+// STATE CALLBACK FUNCTION
+// initializes gripper state fields
+void Gripper::state_callback(const baxter_core_msgs::EndEffectorState::ConstPtr& msg) 
 {
-    this->initialized_ = true;
+    this->state_initialized = true;
 
     this->calibrated_ = msg->calibrated;
     this->ready_ = msg->ready;
     this->gripping_ = msg->gripping;
-    
     this->id = msg->id;
-    this->position = msg->position;
+}
+
+// IR CALLBACK FUNCTION
+// initializes ir sensor range field
+void Gripper::ir_callback(const sensor_msgs::Range& msg) 
+{
+    this->ir_initialized = true;
+    this->range = msg.range;
 }
 
 // INIT FUNCTION
@@ -96,14 +107,15 @@ void Gripper::callback(const baxter_core_msgs::EndEffectorState::ConstPtr& msg)
 // sets all bools to false, ints to -1
 void Gripper::init() 
 {
-    this->initialized_ = false;
+    this->state_initialized = false;
+    this->ir_initialized = false;
     
     this->calibrated_ = false;
     this->ready_ = false;
     this->gripping_ = false;
-
+    
     this->id = -1;
-    this->position = -1;
+    this->range = -1;
 }
 
 //////////////////////////////////////////////////////////////
