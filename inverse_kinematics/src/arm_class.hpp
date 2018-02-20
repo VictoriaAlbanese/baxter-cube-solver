@@ -82,6 +82,8 @@ class Arm
         bool initialized() { return this->joints_initialized && this->point_initialized && this->gripper.initialized(); } 
         bool done() { return this->done_; }
         bool ready_for_pickup() { return (this->endpoint.position.z < -0.1); }
+        
+        geometry_msgs::Pose get_endpoint() { return this->endpoint; }; 
         float get_endpoint_x() { return this->endpoint.position.x; };
         float get_endpoint_y() { return this->endpoint.position.y; };
         float get_endpoint_z() { return this->endpoint.position.z; };

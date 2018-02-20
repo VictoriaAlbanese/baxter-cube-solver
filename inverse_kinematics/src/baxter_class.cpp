@@ -19,6 +19,9 @@ Baxter::Baxter()
     this->state = INITIALIZE;
     this->first = true;
     this->count = 0;
+    
+    this->holding_arm = &this->right_arm;
+    this->other_arm = &this->left_arm;
 }
 
 // CONSTRUCTOR
@@ -33,6 +36,9 @@ Baxter::Baxter(ros::NodeHandle handle)
     this->state = INITIALIZE;
     this->first = true;
     this->count = 0;
+ 
+    this->holding_arm = &this->right_arm;
+    this->other_arm = &this->left_arm;
 }
 
 // PICKUP CUBE FUNCTION
@@ -93,7 +99,6 @@ void Baxter::inspect_cube()
         case READ_FRONT:
             this->read_front();
             break;
-
         case TEARDOWN:
             this->reset_arms();
             break;
@@ -105,33 +110,34 @@ void Baxter::inspect_cube()
 // Private Methods & Callbacks
 
 // MOVE ON FUNCTION
-// move on to the next stage, updating all necessary state variables, etc
+// move on to the next stage, wipe each iks, 
+// update all necessary state variables
 void Baxter::move_on(string message, int new_state) 
 {
     ROS_INFO("%s", message.c_str());
-    this->left_arm.iks.uninitialize();
-    this->right_arm.iks.uninitialize();
+    this->holding_arm->iks.uninitialize();
+    this->other_arm->iks.uninitialize();
     this->state = new_state;
     this->first = true;
 }
     	   
 // INITIALIZE ARMS FUNCTION
-// makes sure the arms are initialized first, then 
-// moves to an initial position, calibrates and opens 
-// the grippers, and moves on when done
+// makes sure the arms are initialized first
+// moves arms to an initial predetermined position
+// calibrates and opens the grippers
 void Baxter::initialize_arms() 
 {
-    if (this->left_arm.initialized() && this->right_arm.initialized()) 
+    if (this->holding_arm->initialized() && this->other_arm->initialized()) 
     {
         if (this->first) 
         { 
             ROS_INFO("INITIALIZING ARMS...");
-            this->left_arm.move_to(HOME);
-            this->right_arm.move_to(HOME);
-            if (!this->left_arm.gripper.calibrated()) this->left_arm.gripper.calibrate();
-            if (!this->right_arm.gripper.calibrated()) this->right_arm.gripper.calibrate();
-            this->left_arm.gripper.release();
-            this->right_arm.gripper.release();
+            this->holding_arm->move_to(HOME);
+            this->other_arm->move_to(HOME);
+            if (!this->holding_arm->gripper.calibrated()) this->holding_arm->gripper.calibrate();
+            if (!this->other_arm->gripper.calibrated()) this->other_arm->gripper.calibrate();
+            this->holding_arm->gripper.release();
+            this->other_arm->gripper.release();
             this->first = false;
         }
                     
@@ -142,7 +148,6 @@ void Baxter::initialize_arms()
             ROS_INFO("LOOKING FOR CUBE...");
         }
     }
-
 }
 
 // FIND CUBE FUNCTION
@@ -150,7 +155,7 @@ void Baxter::initialize_arms()
 // and moves the arm over it, moving on when done
 void Baxter::find_cube() 
 {
-    if (this->first && this->right_arm.move_to(ENDPOINT)) 
+    if (this->first && this->holding_arm->move_to(ENDPOINT)) 
     {
         this->display.make_face(HAPPY);
         this->first = false;
@@ -168,7 +173,7 @@ void Baxter::check_squares()
     if (this->detector.get_num_squares() != 0) 
     {
         this->count = 0;
-        this->right_arm.iks.kill_cloud();
+        this->holding_arm->iks.kill_cloud();
         this->move_on("SQUARES DETECTED...", FIX_ORIENTATION); 
     } 
    
@@ -202,7 +207,7 @@ void Baxter::fix_orientation()
         ROS_INFO("\toffset is [%f] degrees", offset);
         ros::Duration(0.1).sleep();
         
-        if (fabs(offset) < 58.0 || fabs(offset) > 62.0) this->right_arm.turn_wrist_to(offset, true);
+        if (fabs(offset) < 58.0 || fabs(offset) > 62.0) this->holding_arm->turn_wrist_to(offset, true);
         else this->move_on("ORIENTATION FIXED...", FIX_POSITION); 
     }
 }
@@ -226,19 +231,20 @@ void Baxter::fix_position()
         // xy directions are swapped from baxter to image
         float offset_x = this->detector.get_y_offset();
         float offset_y = this->detector.get_x_offset();
+        float z_position = this->holding_arm->get_endpoint_z();
         ROS_INFO("\toffset is (%f, %f)", offset_x, offset_y);
         ros::Duration(0.4).sleep();
 
         if (fabs(offset_x) > 10) 
         {
-            this->right_arm.adjust_endpoint(X, offset_x, true);
-            this->right_arm.move_to(ENDPOINT);
+            this->holding_arm->adjust_endpoint(X, offset_x, true);
+            this->holding_arm->move_to(ENDPOINT);
         }
 
         else if (fabs(offset_y) > 10) 
         {
-            this->right_arm.adjust_endpoint(Y, offset_y, true);
-            this->right_arm.move_to(ENDPOINT);
+            this->holding_arm->adjust_endpoint(Y, offset_y, true);
+            this->holding_arm->move_to(ENDPOINT);
         }
 
         else this->move_on("POSITION FIXED...", LOWERING); 
@@ -254,33 +260,20 @@ void Baxter::lower_arm()
     if (this->first)
     {
         ROS_INFO("LOWERING ARM...");
+ 
+        float poses[4] = { 0.02, -0.06, -0.14 };      
+        this->holding_arm->adjust_endpoint(Z, poses[this->count]);
         
-        float positions[3] = { 0.02, -0.06, -0.14 };
-        float my_position = this->right_arm.get_endpoint_z();
-        float goal = positions[this->count];
-
-        ROS_INFO("%f, %f", my_position, goal);
-
-        if (my_position > goal) 
+        if (this->right_arm.move_to(ENDPOINT))                
         {
-            this->right_arm.adjust_endpoint(Z, 1, true);
-            this->right_arm.move_to(ENDPOINT);
-            ros::Duration(0.4).sleep(); 
+            ROS_INFO("LOWERING ARM... %f", poses[this->count]);     
+            this->first = false; 
         }
-
-        else this->first = false;
-
-        /*this->right_arm.lower_arm();
-        if (this->right_arm.move_to(ENDPOINT))
-        {
-            ROS_INFO("LOWERING ARM...");
-            this->first = false;
-        }*/
     }
         
     else if (this->arms_ready()) 
     {
-        if (this->right_arm.ready_for_pickup()) 
+        if (this->holding_arm->ready_for_pickup()) 
         {
             this->move_on("READY FOR PICKUP...", PICKUP); 
             this->count = 0;
@@ -289,7 +282,6 @@ void Baxter::lower_arm()
         else 
         {
             this->move_on("ARM LOWERED...", FIX_ORIENTATION); 
-            ROS_INFO("distance from cube: %f", this->right_arm.gripper.get_range());
             this->count++;
         }
     }
@@ -304,7 +296,7 @@ void Baxter::grab_cube()
         ROS_INFO("GRABBING CUBE...");
 
         ros::Duration(1.0).sleep();
-        this->right_arm.gripper.grip();
+        this->holding_arm->gripper.grip();
         this->display.make_face(HAPPY);
 
         this->first = false;
@@ -319,40 +311,19 @@ void Baxter::grab_cube()
 // READ BOTTOM FUNCTION
 // moves the arms into the right position for 
 // reading in the bottom face of the cube's colors
+// then reads in the colors on that face
 void Baxter::read_bottom() 
 {
-    if (this->count == 0) 
+    if (this->first) 
     {
-        ROS_INFO("LIFTING ARMS...");
-        this->left_arm.move_to(CENTER);
-        this->right_arm.move_to(CENTER);
-        this->count = 1;
+        ROS_INFO("BRINGING ARMS CENTER...");
+        this->first = false;
     }
 
-    else if (this->arms_ready() && this->count == 1) 
-    { 
-        this->right_arm.set_endpoint(P_CENTER);
-        if (this->right_arm.move_to(ENDPOINT)) 
-        {
-            ROS_INFO("ADJUSTING RIGHT ARM...");
-            this->count = 2;
-        }
-    }
-
-    else if (this->arms_ready() && this->count == 2) 
-    { 
-        this->left_arm.set_endpoint(P_CENTER);
-        if (this->left_arm.move_to(ENDPOINT)) 
-        {
-            ROS_INFO("ADJUSTING LEFT ARM...");
-            this->count = 3;
-        }
-    }
-
-    else if (this->left_arm.done() && count == 3) 
+    else if (this->arms_ready() && this->bring_arms_center()) 
     {
-        this->count = 0;
         ROS_INFO("READING BOTTOM FACE...");
+        this->count = 0;
         this->reader.get_colors();
         this->move_on("BOTTOM FACE READ...", READ_TOP); 
     }
@@ -361,12 +332,13 @@ void Baxter::read_bottom()
 // READ TOP FUNCTION
 // moves the arms into the right position for 
 // reading in the top face of the cube's colors
+// then reads in the colors on that face
 void Baxter::read_top()
 {
     if (this->first) 
     { 
         ROS_INFO("TURNING WRIST...");
-        this->right_arm.turn_wrist_to(3.0);
+        this->holding_arm->turn_wrist_to(3.0);
         this->first = false;
     }
                 
@@ -383,66 +355,16 @@ void Baxter::read_top()
 // for reading in the back face of the cube's colors
 void Baxter::read_back() 
 {
-    if (this->count == 0) 
+    if (this->first) 
     {
-        ROS_INFO("TURNING WRISTS...");
-        this->right_arm.turn_wrist_to(-1.7);
-        this->count = 1;
-    }
-            
-    else if (this->arms_ready() && this->count == 1) 
-    {
-        if (this->first) 
-        {
-            ROS_INFO("GRABBING CUBE WITH LEFT ARM...");
-            this->first = false;
-        }
-
-        float offset_y = this->left_arm.get_endpoint_y();
-        
-        if (offset_y > L_FIRM_HOLD) 
-        {
-            this->left_arm.adjust_endpoint(Y, 1, true);
-            this->left_arm.move_to(ENDPOINT);
-        }
-          
-        else 
-        {
-            this->left_arm.gripper.grip();
-            ros::Duration(1.0).sleep();
-            this->right_arm.gripper.release();
-            this->first = false; 
-            this->count = 2;
-        } 
+        ROS_INFO("CHANGING HANDS...");
+        this->first = false;
     }
 
-    else if (this->arms_ready() && this->count == 2) 
+    else if (this->arms_ready() && this->change_hands())
     {
-        if (this->first) 
-        {
-            ROS_INFO("RELEASING CUBE WITH RIGHT HAND...");
-            this->first = false;
-        }
-
-        float offset_y = this->right_arm.get_endpoint_y();
-
-        if (offset_y > R_AWAY) 
-        {
-            this->right_arm.adjust_endpoint(Y, 1, true);
-            this->right_arm.move_to(ENDPOINT);
-        }
-          
-        else 
-        {
-            this->first = false; 
-            this->count = 3;
-        } 
-    }
-
-    else if (this->arms_ready() && this->count == 3)
-    {
-        this->count = 0;
         ROS_INFO("READING BACK FACE...");
+        this->count = 0;
         this->reader.get_colors();
         this->move_on("DONE FOR NOW...", READ_FRONT);
     }
@@ -456,7 +378,7 @@ void Baxter::read_front()
     if (this->first) 
     {
         ROS_INFO("TURNING WRIST...");
-        this->left_arm.turn_wrist_to(-2.91);
+        this->holding_arm->turn_wrist_to(-2.91);
         this->first = false;
     }
 
@@ -468,6 +390,87 @@ void Baxter::read_front()
     }
 }
 
+// BRING ARMS CENTER FUNCTION
+// moves the arms into the correct position 
+// for the cube's faces to be read
+bool Baxter::bring_arms_center() 
+{
+    if (this->count == 0) 
+    {
+        this->holding_arm->move_to(CENTER);
+        this->other_arm->move_to(CENTER);
+        this->count = 1;
+    }
+
+    else if (this->arms_ready() && this->count == 1) 
+    { 
+        this->holding_arm->set_endpoint(P_CENTER);
+        if (this->holding_arm->move_to(ENDPOINT)) this->count = 2;
+    }
+
+    else if (this->arms_ready() && this->count == 2) 
+    { 
+        this->other_arm->set_endpoint(P_CENTER);
+        if (this->other_arm->move_to(ENDPOINT)) this->count = 3;
+    }
+
+    return (count == 3);
+}
+
+// CHANGE HANDS FUNCTION
+// goes through the motions which enable 
+// baxter to grab the cube in his other hand
+bool Baxter::change_hands() 
+{
+    if (this->count == 0) 
+    {
+        this->holding_arm->turn_wrist_to(-1.7);
+        this->count = 1;
+    }
+            
+    else if (this->arms_ready() && this->count == 1) 
+    {
+        float offset_y = this->other_arm->get_endpoint_y();
+        
+        if (offset_y > L_FIRM_HOLD) 
+        {
+            this->other_arm->adjust_endpoint(Y, 1, true);
+            this->other_arm->move_to(ENDPOINT);
+        }
+          
+        else 
+        {
+            this->other_arm->gripper.grip();
+            ros::Duration(1.0).sleep();
+            this->holding_arm->gripper.release();
+
+            Arm * temp = holding_arm;
+            holding_arm = other_arm;
+            other_arm = temp;
+
+            this->count = 2;
+        } 
+    }
+
+    else if (this->arms_ready() && this->count == 2) 
+    {
+        float offset_y = this->other_arm->get_endpoint_y();
+
+        if (offset_y > R_AWAY) 
+        {
+            this->other_arm->adjust_endpoint(Y, 1, true);
+            this->other_arm->move_to(ENDPOINT);
+        }
+          
+        else 
+        {
+            this->count = 3;
+        } 
+    }
+
+    return (count == 3);
+}
+
 // RESET ARMS FUNCTION
 // brings arms back to initial position
 void Baxter::reset_arms() 
@@ -475,8 +478,8 @@ void Baxter::reset_arms()
     if (this->first) 
     { 
         ROS_INFO("RESETTING ARMS...");
-        this->left_arm.move_to(HOME);
-        this->right_arm.move_to(HOME);
+        this->holding_arm->move_to(HOME);
+        this->other_arm->move_to(HOME);
         this->first = false;
     }
                 

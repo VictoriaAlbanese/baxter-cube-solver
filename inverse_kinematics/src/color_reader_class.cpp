@@ -56,7 +56,7 @@ ColorReader::~ColorReader()
 // and also returns a list of them
 vector<int> ColorReader::get_colors() 
 { 
-    ros::Duration(2.0).sleep();
+    ros::Duration(5.0).sleep();
     this->print_colors();
     return this->colors; 
 }

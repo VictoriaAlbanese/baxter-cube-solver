@@ -123,10 +123,10 @@ void Cloud::set_highest_point()
     this->listener.transformPoint("/base", p_in, p_out);
 
     // Set & print the point
-	ROS_INFO("\tcube found in pcl as point %d(%f, %f, %f)", index, p_out.point.x, p_out.point.y, p_out.point.z);
+	//ROS_INFO("\tcube found in pcl as point %d(%f, %f, %f)", index, p_out.point.x, p_out.point.y, p_out.point.z);
     p_out.point.x+= 0.05;
     p_out.point.z = 0.10;
-	ROS_INFO("\tpublishing edited point (%f, %f, %f)", p_out.point.x, p_out.point.y, p_out.point.z);
+	//ROS_INFO("\tpublishing edited point (%f, %f, %f)", p_out.point.x, p_out.point.y, p_out.point.z);
 	this->highest_point = p_out.point;
 
     // Publish the pose

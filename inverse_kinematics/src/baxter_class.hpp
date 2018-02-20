@@ -50,6 +50,8 @@ class Baxter
         int state;
         bool first;
         int count;
+        Arm * holding_arm;
+        Arm * other_arm;
 
         // functions
         void move_on(string message, int new_state); 
@@ -65,6 +67,8 @@ class Baxter
         void read_back();
         void read_front();
         void reset_arms();
+        bool bring_arms_center();
+        bool change_hands();
 
     public:
 
