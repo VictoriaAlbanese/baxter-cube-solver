@@ -127,6 +127,9 @@ include_directories( ${catkin_INCLUDE_DIRS})
 add_executable(master 
     src/master_node.cpp 
     src/baxter_class.cpp
+    src/baxter_pickup_helpers.cpp
+    src/baxter_inspector_helpers.cpp
+    src/baxter_solver_helpers.cpp
     src/gripper_class.cpp
     src/arm_class.cpp 
     src/iks_class.cpp 

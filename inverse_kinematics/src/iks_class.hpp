@@ -11,21 +11,18 @@
 #ifndef IKS_CLASS_HPP
 #define IKS_CLASS_HPP
 
-#include "ros/ros.h"
-#include "baxter_core_msgs/JointCommand.h"
-#include "baxter_core_msgs/SolvePositionIK.h"
-#include "baxter_core_msgs/SolvePositionIKRequest.h"
-#include "sensor_msgs/JointState.h"
-#include "std_msgs/Bool.h"
+#include <ros/ros.h>
+#include <baxter_core_msgs/JointCommand.h>
+#include <baxter_core_msgs/SolvePositionIK.h>
+#include <baxter_core_msgs/SolvePositionIKRequest.h>
+#include <cstdlib>
+#include <sensor_msgs/JointState.h>
+#include <std_msgs/Bool.h>
+#include <string>
 
 #include "endpoint_class.hpp"
 #include "face_display_class.hpp"
-
-#include <cstdlib>
-#include <string>
-
-#define LEFT 0
-#define RIGHT 1
+#include "universal_constants.hpp"
 
 using std::string;
 

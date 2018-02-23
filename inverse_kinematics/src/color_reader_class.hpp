@@ -12,12 +12,14 @@
 #define COLOR_READER_CLASS_HPP
 
 #include <ros/ros.h>
-#include <sstream>
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <sensor_msgs/image_encodings.h>
+#include <sstream>
+
+#include "universal_constants.hpp"
 
 #define SIZE 400
 #define SIDE 5
@@ -27,13 +29,6 @@
 #define MIDDLE_O CENTER_O - 2
 #define TOP_O LEFT_O
 #define BOTTOM_O RIGHT_O
-
-#define WHITE 0
-#define YELLOW 1
-#define RED 2
-#define ORANGE 3
-#define BLUE 4
-#define GREEN 5
 
 #define CR_WINDOW_NAME "Color Reader"
 

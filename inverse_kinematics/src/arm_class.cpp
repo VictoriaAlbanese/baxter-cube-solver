@@ -119,6 +119,15 @@ void Arm::adjust_endpoint(int direction, float new_position, bool is_increment)
 
     geometry_msgs::Pose new_pose = this->endpoint;
 
+    /*ROS_INFO("old: p(%f, %f, %f) q(%f, %f, %f, %f)",
+            new_pose.position.x,
+            new_pose.position.y,
+            new_pose.position.z,
+            new_pose.orientation.x,
+            new_pose.orientation.y,
+            new_pose.orientation.z,
+            new_pose.orientation.w);*/
+
     switch(direction) 
     {
         case X:
@@ -136,6 +145,15 @@ void Arm::adjust_endpoint(int direction, float new_position, bool is_increment)
             else new_pose.position.z = new_position;
             break;
     }
+
+    /*ROS_INFO("new: p(%f, %f, %f) q(%f, %f, %f, %f)",
+            new_pose.position.x,
+            new_pose.position.y,
+            new_pose.position.z,
+            new_pose.orientation.x,
+            new_pose.orientation.y,
+            new_pose.orientation.z,
+            new_pose.orientation.w);*/
 
     this->point_pub.publish(new_pose);
 }
@@ -317,7 +335,7 @@ void Arm::bring_center()
         new_orders.command[3] = -0.994;
         new_orders.command[4] = -1.024; 
         new_orders.command[5] =  1.493;
-        new_orders.command[6] =  0.000;
+        new_orders.command[6] =  1.500;
     }
     
     else
@@ -359,13 +377,19 @@ void Arm::bring_center()
 // center" function, ensuring the endpoints are perpendicular
 geometry_msgs::Pose Arm::center_perpendicularly()
 {
-    geometry_msgs::Point point = this->set_p(0.60, 0.05, 0.65); 
-    geometry_msgs::Quaternion quaternion = this->set_q(0.000, 0.707, 0.707, 0.000); 
+    geometry_msgs::Point point; 
+    geometry_msgs::Quaternion quaternion;  
    
     if (this->arm_side == LEFT) 
     {
-        point.y = 0.02;
-        quaternion.z*= -1.0;
+        point = this->set_p(0.60, 0.02, 0.65);
+        quaternion = this->set_q(-0.5, -0.5, 0.5, -0.5);;
+    }
+
+    else 
+    {
+        point = this->set_p(0.60, 0.05, 0.65);
+        quaternion = this->set_q(0.000, 0.707, 0.707, 0.000); 
     }
 
     geometry_msgs::Pose pose;

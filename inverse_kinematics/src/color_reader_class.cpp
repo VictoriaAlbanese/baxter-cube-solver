@@ -56,7 +56,7 @@ ColorReader::~ColorReader()
 // and also returns a list of them
 vector<int> ColorReader::get_colors() 
 { 
-    ros::Duration(5.0).sleep();
+    for (int i = 0; i < 200; i++) ros::spinOnce();
     this->print_colors();
     return this->colors; 
 }
@@ -82,10 +82,9 @@ void ColorReader::callback(const sensor_msgs::ImageConstPtr& msg)
     }
 
     // Crop the image
-    Rect rect(560, 330, 120, 120);
+    Rect rect(425, 235, 100, 100);
     Mat cropped = cv_ptr->image(rect);
     resize(cropped, cv_ptr->image, Size(SIZE, SIZE));
-    Rect cube(30, 30, 80, 80);
 
     // Get the color of each cubie
     this->inspect_face(cv_ptr->image);

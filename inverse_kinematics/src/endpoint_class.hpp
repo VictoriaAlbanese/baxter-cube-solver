@@ -11,17 +11,15 @@
 #ifndef ENDPOINT_CLASS_HPP
 #define ENDPOINT_CLASS_HPP
 
-#include "ros/ros.h"
-#include "geometry_msgs/Point.h"
-#include "geometry_msgs/Pose.h"
-#include "geometry_msgs/PoseStamped.h"
-#include "geometry_msgs/Quaternion.h"
-#include "std_msgs/Header.h"
-
+#include <ros/ros.h>
+#include <geometry_msgs/Point.h>
+#include <geometry_msgs/Pose.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/Quaternion.h>
+#include <std_msgs/Header.h>
 #include <string>
 
-#define LEFT 0
-#define RIGHT 1
+#include "universal_constants.hpp"
 
 using std::string;
 

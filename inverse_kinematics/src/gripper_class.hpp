@@ -11,15 +11,13 @@
 #ifndef GRIPPER_CLASS_HPP
 #define GRIPPER_CLASS_HPP
 
-#include "ros/ros.h"
-#include "baxter_core_msgs/EndEffectorCommand.h"
-#include "baxter_core_msgs/EndEffectorState.h"
-#include "sensor_msgs/Range.h"
-
+#include <ros/ros.h>
+#include <baxter_core_msgs/EndEffectorCommand.h>
+#include <baxter_core_msgs/EndEffectorState.h>
+#include <sensor_msgs/Range.h>
 #include <string>
 
-#define LEFT 0
-#define RIGHT 1
+#include "universal_constants.hpp"
 
 using std::string;
 

@@ -1,0 +1,21 @@
+////////////////////////////////////////////////////////////////
+//
+// Programmer: Victoria Albanese
+// Filename: universal_constants.hpp
+//
+// Purpose: Declares some constants needed by more than one 
+// class and must be uniform across them
+//
+////////////////////////////////////////////////////////////////
+
+#define LEFT 0
+#define RIGHT 1
+
+#define WHITE 0
+#define YELLOW 1
+#define RED 2
+#define ORANGE 3
+#define BLUE 4
+#define GREEN 5
+
+////////////////////////////////////////////////////////////////
