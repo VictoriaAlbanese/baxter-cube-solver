@@ -16,13 +16,8 @@
 // then reads in the colors on that face
 void Baxter::read_bottom() 
 {
-    if (this->first) 
-    {
-        ROS_INFO("BRINGING ARMS CENTER...");
-        this->first = false;
-    }
-
-    else if (this->bring_arms_center() && this->arms_ready()) 
+    if(!this->action_complete) this->action_complete = this->bring_arms_center();
+    else  
     {
         this->count = 0;
         this->reader.get_colors();
@@ -38,12 +33,11 @@ void Baxter::read_top()
 {
     if (this->first) 
     { 
-        ROS_INFO("TURNING WRIST...");
         this->holding_arm->turn_wrist_to(CW2);
         this->first = false;
     }
                 
-    else if (this->arms_ready()) 
+    else 
     {
         this->reader.get_colors();
         this->move_on("TOP FACE READ...", READ_BACK); 
@@ -55,25 +49,20 @@ void Baxter::read_top()
 // for reading in the back face of the cube's colors
 void Baxter::read_back() 
 {
-    if (this->first) 
-    {
-        ROS_INFO("CHANGING HANDS...");
-        this->first = false;
-    }
-
     if(!this->action_complete) this->action_complete = this->change_hands();
-
-    else if (this->arms_ready() && count != 0) 
+    else 
     {
-        ROS_INFO("TURNING WRIST...");
-        this->holding_arm->turn_wrist_to(CW2);
-        this->count = 0;
-    }
+        if (this->count != 0) 
+        {
+            this->holding_arm->turn_wrist_to(CW2);
+            this->count = 0;
+        }
 
-    else if (this->arms_ready() && this->count == 0) 
-    {
-        this->reader.get_colors();
-        this->move_on("BACK FACE READ...", READ_FRONT);
+        else  
+        {
+            this->reader.get_colors();
+            this->move_on("BACK FACE READ...", READ_FRONT);
+        }
     }
 }
 
@@ -84,12 +73,11 @@ void Baxter::read_front()
 {
     if (this->first) 
     {
-        ROS_INFO("TURNING WRIST...");
         this->holding_arm->turn_wrist_to(UP);
         this->first = false;
     }
 
-    else if (this->arms_ready())
+    else 
     {
         this->reader.get_colors();
         this->move_on("FRONT FACE READ...", TURN_DEMO);
@@ -101,23 +89,28 @@ void Baxter::read_front()
 // for the cube's faces to be read
 bool Baxter::bring_arms_center() 
 {
-    if (this->count == 0) 
+    if (this->first) 
+    {    
+        ROS_INFO("BRINGING ARMS CENTER...");
+        this->first = true;
+    }
+
+    switch(this->count) 
     {
-        this->holding_arm->move_to(CENTER);
-        this->other_arm->move_to(CENTER);
-        this->count = 1;
-    }
+        case 0:
+            this->holding_arm->move_to(CENTER);
+            this->other_arm->move_to(CENTER);
+            this->count = 1;
+            break;
 
-    else if (this->arms_ready() && this->count == 1) 
-    { 
-        this->holding_arm->set_endpoint(P_CENTER);
-        if (this->holding_arm->move_to(ENDPOINT)) this->count = 2;
-    }
+        case 1:
+            this->holding_arm->set_endpoint(P_CENTER);
+            if (this->holding_arm->move_to(ENDPOINT)) this->count = 2;
+            break;
 
-    else if (this->arms_ready() && this->count == 2) 
-    { 
-        this->other_arm->set_endpoint(P_CENTER);
-        if (this->other_arm->move_to(ENDPOINT)) this->count = 3;
+        case 2:
+            this->other_arm->set_endpoint(P_CENTER);
+            if (this->other_arm->move_to(ENDPOINT)) this->count = 3;
     }
 
     return (this->count == 3);

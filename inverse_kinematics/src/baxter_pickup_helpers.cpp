@@ -30,7 +30,7 @@ void Baxter::initialize_arms()
             this->first = false;
         }
                     
-        else if (this->arms_ready()) 
+        else 
         {
             this->move_on("ARMS INITIALIZED...", OVER_CUBE); 
             this->display.make_face(THINKING);
@@ -44,13 +44,17 @@ void Baxter::initialize_arms()
 // and moves the arm over it, moving on when done
 void Baxter::find_cube() 
 {
-    if (this->first && this->holding_arm->move_to(ENDPOINT)) 
+    if(!this->action_complete) this->action_complete = this->holding_arm->move_to(ENDPOINT);
+    else 
     {
-        this->display.make_face(HAPPY);
-        this->first = false;
-    }
+        if (this->first) 
+        {
+            this->display.make_face(HAPPY);
+            this->first = false;
+        }
         
-    else if (!this->first && this->arms_ready()) this->move_on("ARM OVER CUBE...", CHECK_SQUARE); 
+        else this->move_on("ARM OVER CUBE...", CHECK_SQUARE); 
+    }
 }
 
 // CHECK SQUARES FUNCTION
@@ -154,7 +158,7 @@ void Baxter::lower_arm()
         if (this->right_arm.move_to(ENDPOINT)) this->first = false; 
     }
         
-    else if (this->arms_ready()) 
+    else  
     {
         if (this->holding_arm->ready_for_pickup()) 
         {
@@ -183,7 +187,7 @@ void Baxter::grab_cube()
         this->first = false;
     }
             
-    else if (this->arms_ready()) this->move_on("CUBE GRABBED...", INSPECT_CUBE); 
+    else this->move_on("CUBE GRABBED...", INSPECT_CUBE); 
 }
 
 // RESET ARMS FUNCTION
@@ -198,7 +202,7 @@ void Baxter::reset_arms()
         this->first = false;
     }
                 
-    else if (this->arms_ready()) this->move_on("ARMS RESET...", DONE); 
+    else this->move_on("ARMS RESET...", DONE); 
 }
 
 ////////////////////////////////////////////////////////////////

@@ -34,12 +34,13 @@
 
 #define TURN_DEMO 11
 #define RIGHT_TURN_CW 11
-#define RIGHT_TURN_CCW 12
-#define LEFT_TURN_CW 13
+#define LEFT_TURN_CW 12
+#define RIGHT_TURN_CCW 13
 #define LEFT_TURN_CCW 14
 
 #define TEARDOWN -1
 #define DONE -2
+#define INCREMENT -3
 
 using std::string;
 
@@ -76,6 +77,8 @@ class Baxter
         
         bool change_hands();
         void lr_turn(bool side, float direction);
+        void increment(bool direction, bool do_it = false);
+        void turning_report(bool side, float direction);
 
     public:
 
@@ -94,8 +97,6 @@ class Baxter
         void pickup_cube();
         void inspect_cube();
         void turning_demo();
-        void turn_left(float direction) { this->lr_turn(LEFT, direction); };
-        void turn_right(float direction) { this->lr_turn(RIGHT, direction); };
 };
 
 ////////////////////////////////////////////////////////////////

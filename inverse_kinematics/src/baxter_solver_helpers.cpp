@@ -15,68 +15,40 @@
 // baxter to grab the cube in his other hand
 bool Baxter::change_hands() 
 {
-    if (this->first) 
+    bool side = this->other_arm->side();
+    float offset_y = this->other_arm->get_endpoint_y();
+    Arm * temp = holding_arm;
+    
+    switch(this->count) 
     {
-        ROS_INFO("CHANGING HANDS...");
-        this->first = false;
-    }
+        case 0:
+            ROS_INFO("CHANGING HANDS...");
+            this->other_arm->turn_wrist_to(CW);
+            this->count = 1;
+            break;
+                
+        case 1:
+            if (side == LEFT && offset_y > L_FIRM_HOLD) this->increment(RIGHT);
+            else if (side == RIGHT && offset_y < R_FIRM_HOLD) this->increment(LEFT);
+            else this->count = 2;
+            break;
 
-    if (this->count == 0) 
-    {
-        this->other_arm->turn_wrist_to(CW);
-        this->count = 1;
-    }
-  
-    else if (this->arms_ready() && this->count == 1) 
-    {
-        float offset_y = this->other_arm->get_endpoint_y();
-
-        if (this->other_arm->side() == LEFT && offset_y > L_FIRM_HOLD) 
-        {
-            this->other_arm->adjust_endpoint(Y, 1, true);
-            this->other_arm->move_to(ENDPOINT);
-        }
-
-        else if (this->other_arm->side() == RIGHT && offset_y < R_FIRM_HOLD) 
-        {
-            this->other_arm->adjust_endpoint(Y, -1, true);
-            this->other_arm->move_to(ENDPOINT);
-        }
-          
-        else 
-        {
+        case 2: 
             this->other_arm->gripper.grip();
-            ros::Duration(1.0).sleep();
             this->holding_arm->gripper.release();
-
-            Arm * temp = holding_arm;
             holding_arm = other_arm;
             other_arm = temp;
+            this->count = 3;
+            break;
 
-            this->count = 2;
-        } 
+        case 3: 
+            if (side == LEFT && offset_y < L_AWAY) this->increment(LEFT, true);
+            else if (side == RIGHT && offset_y > R_AWAY) this->increment(RIGHT, true);
+            else this->count = 4;
+            break;
     }
-
-    else if (this->arms_ready() && this->count == 2) 
-    {
-        float offset_y = this->other_arm->get_endpoint_y();
-
-        if (this->other_arm->side() == LEFT && offset_y < L_AWAY) 
-        {
-            this->other_arm->adjust_endpoint(Y, -1, true);
-            this->other_arm->move_to(ENDPOINT);
-        }
-
-        else if (this->other_arm->side() == RIGHT && offset_y > R_AWAY) 
-        {
-            this->other_arm->adjust_endpoint(Y, 1, true);
-            this->other_arm->move_to(ENDPOINT);
-        }
-          
-        else this->count = 3;
-    }
-
-    return (this->arms_ready() && count == 3);
+     
+    return (count == 4);
 }
 
 // TURN LEFT/RIGHT FUNCTION
@@ -84,88 +56,93 @@ bool Baxter::change_hands()
 // side, changing hands if necessary, in the specified direction
 void Baxter::lr_turn(bool side, float direction) 
 {
-    if (this->other_arm->side() != side) this->action_complete = this->change_hands();
-
-    if (this->count == 0 && this->action_complete)
-    {
-        ROS_INFO("TURNING OTHER WRIST UP...");
-        this->other_arm->turn_wrist_to(UP);
-        this->count = 1;
-    }
-
-    if (this->arms_ready() && this->count == 1) 
-    {
-        ROS_INFO("MOVING TO SOFT HOLD...");
-        float offset_y = this->other_arm->get_endpoint_y();
+    if (this->other_arm->side() == side) this->action_complete = true;
+    else this->action_complete = this->change_hands();
     
-        if (side == RIGHT && offset_y > L_SOFT_HOLD) 
-        {
-            this->other_arm->adjust_endpoint(Y, 1, true);
-            this->other_arm->move_to(ENDPOINT);
-        }
+    if (this->action_complete) this->turning_report(side, direction);     
+    float offset_y = this->other_arm->get_endpoint_y();
+    
+    switch(this->count) 
+    {
+        case 0:
+            this->other_arm->turn_wrist_to(UP);
+            this->count = 1;
+            break;
 
-        else if (side == LEFT && offset_y < R_SOFT_HOLD) 
-        {
-            this->other_arm->adjust_endpoint(Y, -1, true);
-            this->other_arm->move_to(ENDPOINT);
-        }
-
-        else 
-        {
+        case 1:
+            if (side == LEFT && offset_y > L_SOFT_HOLD) this->increment(RIGHT);
+            else if (side == RIGHT && offset_y < R_SOFT_HOLD) this->increment(LEFT);
+            else this->count = 2; 
+            break;
+   
+       case 2:  
             ros::Duration(0.5).sleep();
             this->other_arm->gripper.grip();
+            this->other_arm->turn_wrist_to(direction);
+            this->count = 3;
+            break;
+
+       case 3:
             ros::Duration(0.5).sleep();
-            this->count = 2; 
-        }
+            this->other_arm->gripper.release();
+            this->count = 4;
+            break;
+              
+        case 4:
+            if (side == RIGHT && offset_y > R_AWAY) this->increment(RIGHT, true); 
+            else if (side == LEFT && offset_y < L_AWAY) this->increment(LEFT, true);
+            else this->count = 5;
+            break;
+                
+        case 5: 
+            this->other_arm->turn_wrist_to(UP);
+            this->count = 6;
+            break;
+
+        case 6:
+            this->move_on("TURN COMPLETE...", INCREMENT);
+            this->count = 0;
+            break;
     }
-    
-    if (this->arms_ready() && this->count == 2) 
+}
+
+// INCREMENT FUNCTION
+// increments the y coordinate of the endpoint of the 
+// other arm in the specified direction (left/right)
+void Baxter::increment(bool direction, bool do_it) 
+{
+    if (direction == LEFT) 
     {
-        ROS_INFO("TURNING CUBE...");
-        this->other_arm->turn_wrist_to(direction);
-        this->count = 3;
+        if (!do_it) this->other_arm->adjust_endpoint(Y, -1, true);
+        else this->other_arm->adjust_endpoint(Y, L_AWAY);
+        this->other_arm->move_to(ENDPOINT);
     }
 
-    if (this->arms_ready() && this->count == 3) 
+    if (direction == RIGHT) 
     {
-        ros::Duration(0.5).sleep();
-        this->other_arm->gripper.release();
-        ros::Duration(0.5).sleep();
-        this->count = 4;
+        if (!do_it) this->other_arm->adjust_endpoint(Y, 1, true);
+        else this->other_arm->adjust_endpoint(Y, R_AWAY);
+        this->other_arm->move_to(ENDPOINT);
     }
- 
-    if (this->arms_ready() && this->count == 4) 
-    {
-        ROS_INFO("MOVING OTHER ARM AWAY...");
-        float offset_y = this->other_arm->get_endpoint_y();
-      
-        if (side == RIGHT && offset_y > R_AWAY) 
-        {
-            this->other_arm->adjust_endpoint(Y, 1, true);
-            this->other_arm->move_to(ENDPOINT);
-        }
+}
 
-        else if (side == LEFT && offset_y < L_AWAY) 
-        {
-            ROS_INFO("\tleft current[%f] < goal[%f]", offset_y, L_SOFT_HOLD);
-            this->other_arm->adjust_endpoint(Y, -1, true);
-            this->other_arm->move_to(ENDPOINT);
-        }
-
-        else this->count = 5;
-    }
-  
-    if (this->arms_ready() && this->count == 5) 
+// TURNING REPORT FUNCTION
+// literally just prints info... printing logic took up a 
+// lot of space so it was refactored meaninglessly yay neatness
+void Baxter::turning_report(bool side, float direction)
+{
+    if (side == LEFT) 
     {
-        ROS_INFO("TURNING OTHER WRIST UP...");
-        this->other_arm->turn_wrist_to(UP);
-        this->count = 6;
+        if (direction == CW) ROS_INFO("TURNING LEFT FACE CLOCKWISE 90 DEGREES");
+        else if (direction == CCW) ROS_INFO("TURNING LEFT FACE COUNTERCLOCKWISE 90 DEGREES");
+        else if (direction == CW2 || CCW2) ROS_INFO("TURNING LEFT FACE 180 DEGREES");
     }
 
-    if (this->arms_ready() && this->count == 6) 
+    if (side == RIGHT) 
     {
-        this->move_on("DONE FOR NOW...", DONE);
-        this->count = 0;
+        if (direction == CW) ROS_INFO("TURNING RIGHT FACE CLOCKWISE 90 DEGREES");
+        else if (direction == CCW) ROS_INFO("TURNING RIGHT FACE COUNTERCLOCKWISE 90 DEGREES");
+        else if (direction == CW2 || CCW2) ROS_INFO("TURNING RIGHT FACE 180 DEGREES");
     }
 }
 

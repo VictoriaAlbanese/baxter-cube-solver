@@ -58,6 +58,7 @@ vector<int> ColorReader::get_colors()
 { 
     for (int i = 0; i < 200; i++) ros::spinOnce();
     this->print_colors();
+    ros::Duration(0.5).sleep();
     return this->colors; 
 }
 

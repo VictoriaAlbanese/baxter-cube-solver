@@ -232,7 +232,7 @@ void Arm::init()
 {
     this->joints_initialized = false;
     this->point_initialized = false;
-    this->ready_ = false;
+    this->ready_ = true;
     this->done_ = false;
 }
 

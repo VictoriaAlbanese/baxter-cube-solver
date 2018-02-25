@@ -110,19 +110,19 @@ void Baxter::turning_demo()
     switch(this->state) 
     {
         case RIGHT_TURN_CW:
-            /*this->turn_right(CW);
+            this->lr_turn(RIGHT, CW);
             break;
         
         case LEFT_TURN_CW:
-            */this->turn_left(CW);
+            //this->lr_turn(LEFT, CW);
             break;
         
         case RIGHT_TURN_CCW:
-            //this->turn_right(CCW);
+            //this->lr_turn(RIGHT, CCW);
             break;
         
         case LEFT_TURN_CCW:
-            //this->turn_left(CCW);
+            //this->lr_turn(LEFT, CCW);
             break;
 
         case TEARDOWN:
@@ -139,9 +139,11 @@ void Baxter::move_on(string message, int new_state)
     ROS_INFO("%s", message.c_str());
     this->holding_arm->iks.uninitialize();
     this->other_arm->iks.uninitialize();
-    this->state = new_state;
     this->first = true;
     this->action_complete = false;
+
+    if (new_state == INCREMENT) this->state++; 
+    else this->state = new_state;
 }
 
 ////////////////////////////////////////////////////////////////

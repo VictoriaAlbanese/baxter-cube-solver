@@ -24,14 +24,12 @@ int main(int argc, char **argv)
     // main program content
     while (ros::ok() && baxter.get_state() != DONE) 
     {
-        // pickup the cube
-        if (baxter.get_state() < INSPECT_CUBE) baxter.pickup_cube();
-
-        // read in the colors of the cube
-        else if (baxter.get_state() < TURN_DEMO) baxter.inspect_cube();
-
-        // do the turn demo (will be replaced with solve engine)
-        else baxter.turning_demo();
+        if (baxter.arms_ready()) 
+        {
+            if (baxter.get_state() < INSPECT_CUBE) baxter.pickup_cube();
+            else if (baxter.get_state() < TURN_DEMO) baxter.inspect_cube();
+            else baxter.turning_demo();
+        }
 
         // spin & sleep
         ros::spinOnce();

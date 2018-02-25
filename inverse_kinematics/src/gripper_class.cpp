@@ -56,6 +56,7 @@ void Gripper::calibrate()
     msg.id = this->id;
     msg.command = "calibrate";
     this->publisher.publish(msg);
+    ros::Duration(1.0).sleep();
 }
 
 // GRIP FUNCTION
@@ -66,6 +67,7 @@ void Gripper::grip()
     msg.id = this->id;
     msg.command = "grip";
     this->publisher.publish(msg);
+    ros::Duration(1.0).sleep();
 }
 
 // RELEASE FUNCTION
@@ -76,6 +78,7 @@ void Gripper::release()
     msg.id = this->id;
     msg.command = "release";
     this->publisher.publish(msg);
+    ros::Duration(1.0).sleep();
 }
 
 //////////////////////////////////////////////////////////////
