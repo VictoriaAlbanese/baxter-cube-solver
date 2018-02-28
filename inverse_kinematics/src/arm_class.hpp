@@ -25,8 +25,8 @@
 #include "universal_constants.hpp"
 
 #define R_AWAY 0.0
-#define R_SOFT_HOLD 0.025
-#define R_FIRM_HOLD 0.05
+#define R_SOFT_HOLD 0.02
+#define R_FIRM_HOLD 0.04
 #define L_AWAY 0.0
 #define L_SOFT_HOLD (-0.01)
 #define L_FIRM_HOLD (-0.035)

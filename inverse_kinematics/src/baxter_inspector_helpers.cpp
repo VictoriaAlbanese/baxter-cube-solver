@@ -52,10 +52,10 @@ void Baxter::read_back()
     if(!this->action_complete) this->action_complete = this->change_hands();
     else 
     {
-        if (this->count != 0) 
+        if (this->first) 
         {
             this->holding_arm->turn_wrist_to(CW2);
-            this->count = 0;
+            this->first = false;
         }
 
         else  

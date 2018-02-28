@@ -37,7 +37,7 @@ IKS::IKS(ros::NodeHandle handle, bool arm_side) : endpoint(handle, arm_side)
     this->baxter = FaceDisplay(handle);
 	this->client = handle.serviceClient<baxter_core_msgs::SolvePositionIK>(service_name);
 
-    this->kill_pub = handle.advertise<std_msgs::Bool>("kill_cloud", 10);
+    this->kill_pub = handle.advertise<std_msgs::Bool>("kill_cloud", 1);
 }
 
 // CREATE ORDERS FUNCTION
@@ -117,15 +117,20 @@ void IKS::get_iks()
         exit(1);
     }
 
-    /*ROS_INFO("iks recieved: p(%f, %f, %f) q(%f, %f, %f, %f)",
+    /*    
+    if (this->arm_side == LEFT) ROS_INFO("MESSAGE RECIEVED FROM LEFT IKS...");
+    else ROS_INFO("MESSAGE RECIEVED FROM RIGHT IKS...");
+
+    ROS_INFO("\tiks recieved: p(%f, %f, %f) q(%f, %f, %f, %f)",
             this->endpoint.get_point().x,
             this->endpoint.get_point().y,
             this->endpoint.get_point().z,
             this->endpoint.get_q().x,
             this->endpoint.get_q().y,
             this->endpoint.get_q().z,
-            this->endpoint.get_q().w);*/
-
+            this->endpoint.get_q().w);
+    getchar();    
+    */
     this->solved_state = this->service.response.joints[0];
 }
 

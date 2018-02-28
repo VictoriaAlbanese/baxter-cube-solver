@@ -42,6 +42,9 @@
 #define DONE -2
 #define INCREMENT -3
 
+#define SAME 0
+#define OPPOSITE 1
+
 using std::string;
 
 class Baxter 
@@ -77,7 +80,7 @@ class Baxter
         
         bool change_hands();
         void lr_turn(bool side, float direction);
-        void increment(bool direction, bool do_it = false);
+        void increment(bool direction, bool side, bool do_it = false);
         void turning_report(bool side, float direction);
 
     public:

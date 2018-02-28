@@ -29,8 +29,8 @@ Cloud::Cloud(ros::NodeHandle handle)
     this->initialized = false;
     this->done_ = false;
 
-    this->point_pub = handle.advertise<geometry_msgs::Pose>("/right/goal_point", 10);
-    this->cloud_pub = handle.advertise<sensor_msgs::PointCloud2>("filtered_cloud", 10);
+    this->point_pub = handle.advertise<geometry_msgs::Pose>("/right/goal_point", 1);
+    this->cloud_pub = handle.advertise<sensor_msgs::PointCloud2>("filtered_cloud", 1);
 	this->cloud_sub = handle.subscribe("camera/depth/points", 1, &Cloud::cloud_callback, this);
 	this->kill_sub = handle.subscribe("kill_cloud", 1, &Cloud::kill_callback, this);
 

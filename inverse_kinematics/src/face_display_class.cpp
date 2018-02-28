@@ -19,7 +19,7 @@ FaceDisplay::FaceDisplay() {}
 // sets up the ros publisher
 FaceDisplay::FaceDisplay(ros::NodeHandle handle) 
 {
-    this->pub = handle.advertise<sensor_msgs::Image>("/robot/xdisplay", 10);
+    this->pub = handle.advertise<sensor_msgs::Image>("/robot/xdisplay", 1);
 }
 
 // MAKE FACE

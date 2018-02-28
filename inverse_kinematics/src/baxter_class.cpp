@@ -114,10 +114,11 @@ void Baxter::turning_demo()
             break;
         
         case LEFT_TURN_CW:
-            //this->lr_turn(LEFT, CW);
+            this->lr_turn(LEFT, CW);
             break;
         
         case RIGHT_TURN_CCW:
+            this->state = DONE;
             //this->lr_turn(RIGHT, CCW);
             break;
         

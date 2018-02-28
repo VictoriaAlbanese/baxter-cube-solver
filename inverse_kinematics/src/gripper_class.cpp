@@ -43,9 +43,9 @@ Gripper::Gripper(ros::NodeHandle handle, bool arm_side)
     if (this->arm_side == LEFT) pub_topic = "robot/end_effector/left_gripper/command";
     else pub_topic = "robot/end_effector/right_gripper/command";
 
-    this->state_sub = handle.subscribe(state_sub_topic, 10, &Gripper::state_callback, this);
-    this->ir_sub = handle.subscribe(ir_sub_topic, 10, &Gripper::ir_callback, this);
-    this->publisher = handle.advertise<baxter_core_msgs::EndEffectorCommand>(pub_topic, 10);
+    this->state_sub = handle.subscribe(state_sub_topic, 1, &Gripper::state_callback, this);
+    this->ir_sub = handle.subscribe(ir_sub_topic, 1, &Gripper::ir_callback, this);
+    this->publisher = handle.advertise<baxter_core_msgs::EndEffectorCommand>(pub_topic, 1);
 }
 
 // CALIBRATE FUNCTION

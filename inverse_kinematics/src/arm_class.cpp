@@ -47,10 +47,10 @@ Arm::Arm(ros::NodeHandle handle, bool arm_side)
     if (this->arm_side == LEFT) sub_topic = "/robot/limb/left/endpoint_state";
     else sub_topic = "/robot/limb/right/endpoint_state";
    
-    this->order_pub = handle.advertise<baxter_core_msgs::JointCommand>(pub_joint_topic, 10);
-    this->point_pub = handle.advertise<geometry_msgs::Pose>(pub_point_topic, 10);
-    this->joint_sub = handle.subscribe<sensor_msgs::JointState>("/robot/joint_states", 10, &Arm::joint_callback, this);
-    this->point_sub = handle.subscribe<baxter_core_msgs::EndpointState>(sub_topic, 10, &Arm::point_callback, this);
+    this->order_pub = handle.advertise<baxter_core_msgs::JointCommand>(pub_joint_topic, 1);
+    this->point_pub = handle.advertise<geometry_msgs::Pose>(pub_point_topic, 1);
+    this->joint_sub = handle.subscribe<sensor_msgs::JointState>("/robot/joint_states", 1, &Arm::joint_callback, this);
+    this->point_sub = handle.subscribe<baxter_core_msgs::EndpointState>(sub_topic, 1, &Arm::point_callback, this);
 }
 
 // MOVE TO FUNCTION (integer argument)
@@ -119,14 +119,19 @@ void Arm::adjust_endpoint(int direction, float new_position, bool is_increment)
 
     geometry_msgs::Pose new_pose = this->endpoint;
 
-    /*ROS_INFO("old: p(%f, %f, %f) q(%f, %f, %f, %f)",
+    /* 
+    if (this->arm_side == LEFT) ROS_INFO("PUBLISHING TO LEFT ARM...");
+    else ROS_INFO("PUBLISHING TO RIGHT ARM...");
+
+    ROS_INFO("\told: p(%f, %f, %f) q(%f, %f, %f, %f)",
             new_pose.position.x,
             new_pose.position.y,
             new_pose.position.z,
             new_pose.orientation.x,
             new_pose.orientation.y,
             new_pose.orientation.z,
-            new_pose.orientation.w);*/
+            new_pose.orientation.w);
+    */
 
     switch(direction) 
     {
@@ -146,14 +151,16 @@ void Arm::adjust_endpoint(int direction, float new_position, bool is_increment)
             break;
     }
 
-    /*ROS_INFO("new: p(%f, %f, %f) q(%f, %f, %f, %f)",
+    /* 
+    ROS_INFO("\tnew: p(%f, %f, %f) q(%f, %f, %f, %f)",
             new_pose.position.x,
             new_pose.position.y,
             new_pose.position.z,
             new_pose.orientation.x,
             new_pose.orientation.y,
             new_pose.orientation.z,
-            new_pose.orientation.w);*/
+            new_pose.orientation.w);
+    */
 
     this->point_pub.publish(new_pose);
 }
@@ -254,17 +261,26 @@ bool Arm::is_positioned()
     {
         if (fabs(this->orders.command[i] - this->current_joint_positions[i]) > 0.01 )
         {
-            /* 
-            ROS_INFO("\tmoving %s from [%f] to [%f]", 
-                  orders.names[i].c_str(), 
-                  this->current_joint_positions[i], 
-                  this->orders.command[i]);
-            */
+            /*string name = (arm_side == LEFT ? "left_w2" : "right_w2");
+            if (this->orders.names[i].find(name) != string::npos) 
+            {
+                ROS_INFO("\tmoving %s from [%f] to [%f]", this->orders.names[i].c_str(), this->current_joint_positions[i], this->orders.command[i]);
+            }*/
+
             return false;
         }
     }
 
-    //ROS_INFO("\trepositioned...");
+    /*
+    for (int i = 0; i < this->orders.command.size(); i++)
+    {
+        string name = (arm_side == LEFT ? "left_w2" : "right_w2");
+        if (this->orders.names[i].find(name) != string::npos) 
+        {
+            ROS_INFO("\trepos  %s from [%f] to [%f]", this->orders.names[i].c_str(), this->current_joint_positions[i], this->orders.command[i]);
+        }
+    }*/
+
     return true;
 }
 
