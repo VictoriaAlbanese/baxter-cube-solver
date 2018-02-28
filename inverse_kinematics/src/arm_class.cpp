@@ -138,16 +138,22 @@ void Arm::adjust_endpoint(int direction, float new_position, bool is_increment)
         case X:
             if (is_increment) new_pose.position.x+= increment;
             else new_pose.position.x = new_position;
+            new_pose.position.y = this->track.y;
+            new_pose.position.z = this->track.z;
             break;
 
         case Y:
             if (is_increment) new_pose.position.y+= increment;
             else new_pose.position.y = new_position;
+            new_pose.position.x = this->track.x;
+            new_pose.position.z = this->track.z;
             break;
 
         case Z:
             if (is_increment) new_pose.position.z+= increment;
             else new_pose.position.z = new_position;
+            new_pose.position.x = this->track.x;
+            new_pose.position.y = this->track.y;
             break;
     }
 
@@ -230,6 +236,7 @@ void Arm::point_callback(const baxter_core_msgs::EndpointStateConstPtr& msg)
 {
     this->point_initialized = true;
     this->endpoint = msg->pose;
+    this->track = msg->pose.position;
 }
 
 // INIT FUNCTION
@@ -261,25 +268,12 @@ bool Arm::is_positioned()
     {
         if (fabs(this->orders.command[i] - this->current_joint_positions[i]) > 0.01 )
         {
-            /*string name = (arm_side == LEFT ? "left_w2" : "right_w2");
-            if (this->orders.names[i].find(name) != string::npos) 
-            {
-                ROS_INFO("\tmoving %s from [%f] to [%f]", this->orders.names[i].c_str(), this->current_joint_positions[i], this->orders.command[i]);
-            }*/
-
+            //ROS_INFO("\tmoving %s from [%f] to [%f]", this->orders.names[i].c_str(), this->current_joint_positions[i], this->orders.command[i]);
             return false;
         }
     }
 
-    /*
-    for (int i = 0; i < this->orders.command.size(); i++)
-    {
-        string name = (arm_side == LEFT ? "left_w2" : "right_w2");
-        if (this->orders.names[i].find(name) != string::npos) 
-        {
-            ROS_INFO("\trepos  %s from [%f] to [%f]", this->orders.names[i].c_str(), this->current_joint_positions[i], this->orders.command[i]);
-        }
-    }*/
+    //ROS_INFO("\trepos  %s from [%f] to [%f]", this->orders.names[i].c_str(), this->current_joint_positions[i], this->orders.command[i]);
 
     return true;
 }
@@ -388,7 +382,7 @@ void Arm::bring_center()
     */
 }
 
-// CENETERS ARMS PERPENDICULARLY FUNCTION
+// CENTERS ARMS PERPENDICULARLY FUNCTION
 // adjusts the endpoints of the results of the "bring 
 // center" function, ensuring the endpoints are perpendicular
 geometry_msgs::Pose Arm::center_perpendicularly()

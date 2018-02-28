@@ -154,7 +154,9 @@ void Baxter::lower_arm()
     {
         ROS_INFO("LOWERING ARM...");
         float poses[4] = { 0.02, -0.06, -0.14 };      
-        this->holding_arm->adjust_endpoint(Z, poses[this->count]);
+        geometry_msgs::Pose new_pose = this->holding_arm->get_endpoint();
+        new_pose.position.z = poses[this->count];
+        this->holding_arm->set_endpoint(new_pose.position, new_pose.orientation);
         if (this->right_arm.move_to(ENDPOINT)) this->first = false; 
     }
         

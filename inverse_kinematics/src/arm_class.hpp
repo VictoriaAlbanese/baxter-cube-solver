@@ -25,11 +25,11 @@
 #include "universal_constants.hpp"
 
 #define R_AWAY 0.0
-#define R_SOFT_HOLD 0.02
-#define R_FIRM_HOLD 0.04
+#define R_SOFT_HOLD 0.03
+#define R_FIRM_HOLD 0.05
 #define L_AWAY 0.0
 #define L_SOFT_HOLD (-0.01)
-#define L_FIRM_HOLD (-0.035)
+#define L_FIRM_HOLD (-0.03)
 
 #define CW2 3.0
 #define CW 1.6
@@ -56,6 +56,7 @@ class Arm
         bool arm_side;
         bool ready_;
         bool done_;
+        geometry_msgs::Point current_track;
 
         bool joints_initialized;
         baxter_core_msgs::JointCommand orders;

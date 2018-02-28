@@ -127,7 +127,8 @@ void Baxter::turning_demo()
             break;
 
         case TEARDOWN:
-            //this->reset_arms();
+            ros::Duration(5.0).sleep();
+            this->reset_arms();
             break;
     }
 }

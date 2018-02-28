@@ -24,13 +24,6 @@ bool Baxter::change_hands()
     {
         case 0:
             ROS_INFO("CHANGING HANDS...");
-
-            if (this->holding_arm->side() == LEFT) ROS_INFO("holding arm is left");
-            else ROS_INFO("holding arm is right");
- 
-            if (this->other_arm->side() == LEFT) ROS_INFO("other arm is left");
-            else ROS_INFO("other arm is right");
-           
             this->other_arm->turn_wrist_to(CW);
             this->count = 1;
             break;
@@ -61,13 +54,6 @@ bool Baxter::change_hands()
             this->other_arm = temp;
             done = true;
             this->count = 0;
-     
-            if (this->holding_arm->side() == LEFT) ROS_INFO("holding arm is now left");
-            else ROS_INFO("holding arm is now right");
-
-            if (this->other_arm->side() == LEFT) ROS_INFO("other arm is now left");
-            else ROS_INFO("other arm is now right");
-    
             ROS_INFO("CHANGING HANDS COMPLETE..");
             break;
     }
@@ -91,12 +77,6 @@ void Baxter::lr_turn(bool side, float direction)
             ROS_INFO("PERFORMING TURN...");   
             this->first = false;
         }
-       
-        if (this->holding_arm->side() == LEFT) ROS_INFO("holding arm is still left");
-        else ROS_INFO("holding arm is still right");
-    
-        if (this->other_arm->side() == LEFT) ROS_INFO("other arm is still left");
-        else ROS_INFO("other arm is still right");
  
         switch(this->count) 
         {
@@ -108,9 +88,8 @@ void Baxter::lr_turn(bool side, float direction)
     
             case 1:
                 ROS_INFO("\tmoving to soft hold");
-                if (side == RIGHT) ROS_INFO("right  [%f] < [%f]", offset_y, R_SOFT_HOLD);
-                else if (side == LEFT) ROS_INFO("left [%f] > [%f]", offset_y, L_SOFT_HOLD);
-
+                //if (side == RIGHT) ROS_INFO("right  [%f] < [%f]", offset_y, R_SOFT_HOLD);
+                //else if (side == LEFT) ROS_INFO("left [%f] > [%f]", offset_y, L_SOFT_HOLD);
                 if (side == LEFT && offset_y > L_SOFT_HOLD) this->increment(RIGHT, SAME);
                 else if (side == RIGHT && offset_y < R_SOFT_HOLD) this->increment(LEFT, SAME);
                 else this->count = 2; 
@@ -160,8 +139,8 @@ void Baxter::increment(bool direction, bool side, bool do_it)
     Arm * arm = this->other_arm;
     if (side == OPPOSITE) arm = this->holding_arm;
 
-    if (arm->side() == LEFT) ROS_INFO("about to move the left side");
-    else if (arm->side() == RIGHT) ROS_INFO("about to move the right side");
+    //if (arm->side() == LEFT) ROS_INFO("about to move the left side");
+    //else if (arm->side() == RIGHT) ROS_INFO("about to move the right side");
 
     if (direction == LEFT) 
     {
