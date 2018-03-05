@@ -132,7 +132,7 @@ void SquareDetector::find_squares(Mat& image)
         Canny(gray, dialated, 0, THRESH, 3);
         dilate(dialated, dialated, Mat(), Point(-1,-1), 3);
         findContours(dialated, contours, RETR_LIST, CHAIN_APPROX_SIMPLE);
-        imshow(SD_WINDOW_NAME, dialated);
+        imshow("dialated", dialated);
     
         // test each contour
         for(size_t i = 0; i < contours.size(); i++)

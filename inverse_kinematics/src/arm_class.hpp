@@ -56,7 +56,9 @@ class Arm
         bool arm_side;
         bool ready_;
         bool done_;
-        geometry_msgs::Point current_track;
+        
+        bool use_track;
+        geometry_msgs::Point track;
 
         bool joints_initialized;
         baxter_core_msgs::JointCommand orders;

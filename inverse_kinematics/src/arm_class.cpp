@@ -138,22 +138,31 @@ void Arm::adjust_endpoint(int direction, float new_position, bool is_increment)
         case X:
             if (is_increment) new_pose.position.x+= increment;
             else new_pose.position.x = new_position;
-            new_pose.position.y = this->track.y;
-            new_pose.position.z = this->track.z;
+            if (this->use_track)
+            {
+                new_pose.position.y = this->track.y;
+                new_pose.position.z = this->track.z;
+            }
             break;
 
         case Y:
             if (is_increment) new_pose.position.y+= increment;
             else new_pose.position.y = new_position;
-            new_pose.position.x = this->track.x;
-            new_pose.position.z = this->track.z;
+            if (this->use_track)
+            {
+                new_pose.position.x = this->track.x;
+                new_pose.position.z = this->track.z;
+            }
             break;
 
         case Z:
             if (is_increment) new_pose.position.z+= increment;
             else new_pose.position.z = new_position;
-            new_pose.position.x = this->track.x;
-            new_pose.position.y = this->track.y;
+            if (use_track)
+            {
+                new_pose.position.x = this->track.x;
+                new_pose.position.y = this->track.y;
+            }
             break;
     }
 
@@ -169,6 +178,7 @@ void Arm::adjust_endpoint(int direction, float new_position, bool is_increment)
     */
 
     this->point_pub.publish(new_pose);
+    if(this->use_track) this->track = new_pose.position;
 }
 
 // SET ENDPOINT FUNCTION (integer argument)
@@ -186,6 +196,7 @@ void Arm::set_endpoint(int hardcoded_state)
     }
 
     this->point_pub.publish(new_pose);
+    if(this->use_track) this->track = new_pose.position;
 }
 
 // SET ENDPOINT FUNCTION (geometry_msgs arguments)
@@ -197,6 +208,7 @@ void Arm::set_endpoint(geometry_msgs::Point point, geometry_msgs::Quaternion qua
     new_pose.orientation = quaternion;
 
     this->point_pub.publish(new_pose);
+    if(this->use_track) this->track = new_pose.position;
 }
 
 //////////////////////////////////////////////////////////////
@@ -236,7 +248,6 @@ void Arm::point_callback(const baxter_core_msgs::EndpointStateConstPtr& msg)
 {
     this->point_initialized = true;
     this->endpoint = msg->pose;
-    this->track = msg->pose.position;
 }
 
 // INIT FUNCTION
@@ -248,6 +259,7 @@ void Arm::init()
     this->point_initialized = false;
     this->ready_ = true;
     this->done_ = false;
+    this->use_track = false;
 }
 
 // GET READY FUNCTION
@@ -387,6 +399,8 @@ void Arm::bring_center()
 // center" function, ensuring the endpoints are perpendicular
 geometry_msgs::Pose Arm::center_perpendicularly()
 {
+    this->use_track = true;
+
     geometry_msgs::Point point; 
     geometry_msgs::Quaternion quaternion;  
    

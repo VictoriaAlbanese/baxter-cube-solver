@@ -92,7 +92,7 @@ bool Baxter::bring_arms_center()
     if (this->first) 
     {    
         ROS_INFO("BRINGING ARMS CENTER...");
-        this->first = true;
+        this->first = false;
     }
 
     switch(this->count) 

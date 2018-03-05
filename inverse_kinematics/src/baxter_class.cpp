@@ -32,8 +32,8 @@ Baxter::Baxter(ros::NodeHandle handle)
    , detector(handle) 
    , reader(handle)
 {
-    //this->state = INITIALIZE;
-    this->state = INSPECT_CUBE;
+    this->state = INITIALIZE;
+    //this->state = INSPECT_CUBE;
     this->first = true;
     this->action_complete = false;
     this->count = 0;
