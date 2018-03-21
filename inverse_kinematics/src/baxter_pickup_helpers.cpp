@@ -23,16 +23,16 @@ void Baxter::initialize_arms()
             ROS_INFO("INITIALIZING ARMS...");
             this->holding_arm->move_to(HOME);
             this->other_arm->move_to(HOME);
-            if (!this->holding_arm->gripper.calibrated()) this->holding_arm->gripper.calibrate();
+            /*if (!this->holding_arm->gripper.calibrated()) this->holding_arm->gripper.calibrate();
             if (!this->other_arm->gripper.calibrated()) this->other_arm->gripper.calibrate();
             this->holding_arm->gripper.release();
-            this->other_arm->gripper.release();
+            this->other_arm->gripper.release();*/
             this->first = false;
         }
                     
         else 
         {
-            this->move_on("ARMS INITIALIZED...", OVER_CUBE); 
+            this->move_on("ARMS INITIALIZED...", INSPECT_CUBE);//OVER_CUBE); 
             this->display.make_face(THINKING);
             ROS_INFO("LOOKING FOR CUBE...");
         }
@@ -53,7 +53,10 @@ void Baxter::find_cube()
             this->first = false;
         }
         
-        else this->move_on("ARM OVER CUBE...", CHECK_SQUARE); 
+        else 
+        {
+            this->move_on("ARM OVER CUBE...", CHECK_SQUARE); 
+        }
     }
 }
 

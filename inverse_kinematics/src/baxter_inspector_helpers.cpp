@@ -16,12 +16,23 @@
 // then reads in the colors on that face
 void Baxter::read_bottom() 
 {
-    if(!this->action_complete) this->action_complete = this->bring_arms_center();
-    else  
+    switch(this->count) 
     {
-        this->count = 0;
-        this->reader.get_colors();
-        this->move_on("BOTTOM FACE READ...", READ_TOP); 
+        case 0:
+        case 1:
+            this->bring_arm_center(this->holding_arm);
+            break;
+
+        case 2:
+        case 3:
+            this->bring_arm_center(this->other_arm);
+            break;
+    
+        case 4:
+            this->count = 0;
+            this->reader.get_colors();
+            this->move_on("BOTTOM FACE READ...", READ_TOP); 
+            break;
     }
 }
 
@@ -85,35 +96,68 @@ void Baxter::read_front()
 }
 
 // BRING ARMS CENTER FUNCTION
-// moves the arms into the correct position 
-// for the cube's faces to be read
-bool Baxter::bring_arms_center() 
+// moves the specified arms into the correct position 
+// for the cube's faces to be turned
+bool Baxter::bring_arm_center(Arm * arm) 
 {
     if (this->first) 
     {    
-        ROS_INFO("BRINGING ARMS CENTER...");
+        if (arm->side() == LEFT) ROS_INFO("BRINGING LEFT ARM CENTER...");
+        else ROS_INFO("BRINGING RIGHT ARM CENTER...");
+        this->first = false;
+    }
+
+    switch(this->count % 2) 
+    {
+        case 0:
+            ROS_INFO("...step 1");
+            arm->move_to(CENTER);
+            this->count++;
+            ROS_INFO("...end step 1");
+            break;
+
+        case 1:
+            ROS_INFO("...step 2");
+            arm->set_endpoint(P_CENTER);
+            if (arm->move_to(ENDPOINT)) this->count++;
+            ROS_INFO("...end step 2");
+            break;
+    }
+
+    return (this->count == 2);
+}
+
+// BRING ARM UP FUNCTION
+// moves the specified arm into the correct position 
+// for the cube's faces to be read
+bool Baxter::bring_arm_up(Arm * arm) 
+{
+    if (this->first) 
+    {    
+        if (arm->side() == LEFT) ROS_INFO("BRINGING LEFT ARM UP...");
+        else ROS_INFO("BRINGING RIGHT ARM UP...");
         this->first = false;
     }
 
     switch(this->count) 
     {
         case 0:
-            this->holding_arm->move_to(CENTER);
-            this->other_arm->move_to(CENTER);
+            arm->move_to(READ_UP);
             this->count = 1;
             break;
 
         case 1:
-            this->holding_arm->set_endpoint(P_CENTER);
-            if (this->holding_arm->move_to(ENDPOINT)) this->count = 2;
+            arm->set_endpoint(P_READ_UP);
+            if (arm->move_to(ENDPOINT)) this->count = 2;
             break;
-
-        case 2:
-            this->other_arm->set_endpoint(P_CENTER);
-            if (this->other_arm->move_to(ENDPOINT)) this->count = 3;
     }
 
-    return (this->count == 3);
+    if (this->count == 2) 
+    {
+        this->count = 0;
+        return true;
+    }
+    else return false;
 }
 
 ////////////////////////////////////////////////////////////////

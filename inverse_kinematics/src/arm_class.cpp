@@ -74,6 +74,10 @@ bool Arm::move_to(int hardcoded_state)
         case CENTER:
             this->bring_center();
             break;
+
+        case READ_UP:
+            this->bring_up();
+            break;
     }
 
     return success;
@@ -192,6 +196,10 @@ void Arm::set_endpoint(int hardcoded_state)
     {
         case P_CENTER:
             new_pose = this->center_perpendicularly();
+            break;
+
+        case P_READ_UP:
+            new_pose = this->bring_up_perpendicularly();
             break;
     }
 
@@ -394,6 +402,57 @@ void Arm::bring_center()
     */
 }
 
+// BRING UP FUNCTION
+// moves baxter's arms to a hard coded position
+// that brings the cube to right in front of the camera for color inspection
+void Arm::bring_up() 
+{
+    baxter_core_msgs::JointCommand new_orders;
+    new_orders.mode = baxter_core_msgs::JointCommand::POSITION_MODE;
+
+    if (this->arm_side == LEFT) 
+    {
+        new_orders.names.push_back("left_e0");
+        new_orders.names.push_back("left_e1");
+        new_orders.names.push_back("left_s0");
+        new_orders.names.push_back("left_s1");
+        new_orders.names.push_back("left_w0");
+        new_orders.names.push_back("left_w1");
+        new_orders.names.push_back("left_w2");
+
+        new_orders.command.resize(new_orders.names.size());
+        new_orders.command[0] = -1.179; 
+        new_orders.command[1] =  1.492;
+        new_orders.command[2] =  0.280;
+        new_orders.command[3] = -0.994;
+        new_orders.command[4] = -1.024; 
+        new_orders.command[5] =  1.493;
+        new_orders.command[6] =  1.500;
+    }
+    
+    else
+    {
+        new_orders.names.push_back("right_e0");
+        new_orders.names.push_back("right_e1");
+        new_orders.names.push_back("right_s0");
+        new_orders.names.push_back("right_s1");
+        new_orders.names.push_back("right_w0");
+        new_orders.names.push_back("right_w1");
+        new_orders.names.push_back("right_w2");
+
+        new_orders.command.resize(new_orders.names.size());
+        new_orders.command[0] =  1.482; 
+        new_orders.command[1] =  2.340;
+        new_orders.command[2] =  0.436;
+        new_orders.command[3] =  0.071;
+        new_orders.command[4] =  1.503; 
+        new_orders.command[5] =  1.507;
+        new_orders.command[6] = -2.017;
+    }
+    
+    this->move_to(new_orders);
+}
+
 // CENTERS ARMS PERPENDICULARLY FUNCTION
 // adjusts the endpoints of the results of the "bring 
 // center" function, ensuring the endpoints are perpendicular
@@ -414,6 +473,35 @@ geometry_msgs::Pose Arm::center_perpendicularly()
     {
         point = this->set_p(0.60, 0.05, 0.65);
         quaternion = this->set_q(0.000, 0.707, 0.707, 0.000); 
+    }
+
+    geometry_msgs::Pose pose;
+    pose.position = point;
+    pose.orientation = quaternion;
+
+    return pose;
+}
+
+// BRINGS UP ARMS PERPENDICULARLY FUNCTION
+// adjusts the endpoints of the results of the "bring 
+// up" function, ensuring the endpoints are perpendicular
+geometry_msgs::Pose Arm::bring_up_perpendicularly()
+{
+    this->use_track = true;
+
+    geometry_msgs::Point point; 
+    geometry_msgs::Quaternion quaternion;  
+   
+    if (this->arm_side == LEFT) 
+    {
+        point = this->set_p(0.60, 0.02, 0.65);
+        quaternion = this->set_q(-0.5, -0.5, 0.5, -0.5);;
+    }
+
+    else 
+    {
+        point = this->set_p(0.33, 0.00, 0.76);
+        quaternion = this->set_q(0.00, 0.0, 1.0, 0.0); 
     }
 
     geometry_msgs::Pose pose;

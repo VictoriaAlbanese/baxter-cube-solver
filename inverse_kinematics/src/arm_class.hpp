@@ -41,6 +41,8 @@
 #define CENTER 2
 #define P_CENTER 3
 #define ENDPOINT 4
+#define READ_UP 5
+#define P_READ_UP 6
 #define X 1
 #define Y 2
 #define Z 3
@@ -79,7 +81,9 @@ class Arm
         bool is_positioned();
         void send_home(); 
         void bring_center(); 
+        void bring_up(); 
         geometry_msgs::Pose center_perpendicularly(); 
+        geometry_msgs::Pose bring_up_perpendicularly(); 
         geometry_msgs::Point set_p(float new_x, float new_y, float new_z);
         geometry_msgs::Quaternion set_q(float new_x, float new_y, float new_z, float new_w);
 

@@ -83,11 +83,13 @@ void ColorReader::callback(const sensor_msgs::ImageConstPtr& msg)
     }
 
     // Crop the image
-    Rect rect(425, 235, 100, 100);
-    Mat cropped = cv_ptr->image(rect);
-    resize(cropped, cv_ptr->image, Size(SIZE, SIZE));
+    //Rect rect(430, 235, 100, 100);
+    //Mat cropped = cv_ptr->image(rect);
+    //resize(cropped, cv_ptr->image, Size(SIZE, SIZE));
 
     // Get the color of each cubie
+    Rect outline(10, 30, 50, 50);
+    rectangle(cv_ptr->image, outline, Scalar(255, 0, 0), 2);
     this->inspect_face(cv_ptr->image);
 
     // Update window

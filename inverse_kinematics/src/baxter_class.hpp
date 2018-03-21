@@ -76,7 +76,8 @@ class Baxter
         void read_top();
         void read_back();
         void read_front();
-        bool bring_arms_center();
+        bool bring_arm_center(Arm * arm);
+        bool bring_arm_up(Arm * arm);
         
         bool change_hands();
         void lr_turn(bool side, float direction);
