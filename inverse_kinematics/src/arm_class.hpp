@@ -27,7 +27,7 @@
 #define R_AWAY 0.0
 #define R_SOFT_HOLD 0.03
 #define R_FIRM_HOLD 0.05
-#define L_AWAY 0.0
+#define L_AWAY 0.02
 #define L_SOFT_HOLD (-0.01)
 #define L_FIRM_HOLD (-0.03)
 

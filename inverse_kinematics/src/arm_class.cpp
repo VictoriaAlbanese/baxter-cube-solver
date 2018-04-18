@@ -288,12 +288,18 @@ bool Arm::is_positioned()
     {
         if (fabs(this->orders.command[i] - this->current_joint_positions[i]) > 0.01 )
         {
-            //ROS_INFO("\tmoving %s from [%f] to [%f]", this->orders.names[i].c_str(), this->current_joint_positions[i], this->orders.command[i]);
+            // ROS_INFO("\tmoving %s from [%f] to [%f]", 
+            // this->orders.names[i].c_str(), 
+            // this->current_joint_positions[i], 
+            // this->orders.command[i]);
             return false;
         }
     }
 
-    //ROS_INFO("\trepos  %s from [%f] to [%f]", this->orders.names[i].c_str(), this->current_joint_positions[i], this->orders.command[i]);
+    // ROS_INFO("\trepos  %s from [%f] to [%f]", 
+    // this->orders.names[i].c_str(), 
+    // this->current_joint_positions[i], 
+    // this->orders.command[i]);
 
     return true;
 }
@@ -421,13 +427,13 @@ void Arm::bring_up()
         new_orders.names.push_back("left_w2");
 
         new_orders.command.resize(new_orders.names.size());
-        new_orders.command[0] = -1.179; 
-        new_orders.command[1] =  1.492;
-        new_orders.command[2] =  0.280;
-        new_orders.command[3] = -0.994;
-        new_orders.command[4] = -1.024; 
-        new_orders.command[5] =  1.493;
-        new_orders.command[6] =  1.500;
+        new_orders.command[0] = -1.482; 
+        new_orders.command[1] =  2.340;
+        new_orders.command[2] = -0.436;
+        new_orders.command[3] =  0.071;
+        new_orders.command[4] = -1.503; 
+        new_orders.command[5] =  1.600;
+        new_orders.command[6] = -1.250;
     }
     
     else
@@ -489,21 +495,9 @@ geometry_msgs::Pose Arm::bring_up_perpendicularly()
 {
     this->use_track = true;
 
-    geometry_msgs::Point point; 
-    geometry_msgs::Quaternion quaternion;  
-   
-    if (this->arm_side == LEFT) 
-    {
-        point = this->set_p(0.60, 0.02, 0.65);
-        quaternion = this->set_q(-0.5, -0.5, 0.5, -0.5);;
-    }
-
-    else 
-    {
-        point = this->set_p(0.33, 0.00, 0.76);
-        quaternion = this->set_q(0.00, 0.0, 1.0, 0.0); 
-    }
-
+    geometry_msgs::Point point = this->set_p(0.33, 0.00, 0.76);
+    geometry_msgs::Quaternion quaternion = this->set_q(0.00, 0.0, 1.0, 0.0); 
+    
     geometry_msgs::Pose pose;
     pose.position = point;
     pose.orientation = quaternion;

@@ -14,6 +14,7 @@
 #include <ros/ros.h>
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
+#include <opencv2/features2d/features2d.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <sensor_msgs/image_encodings.h>
@@ -23,13 +24,6 @@
 
 #define SIZE 400
 #define SIDE 5
-#define CENTER_O ((SIZE / 2) - (SIDE / 2))
-#define LEFT_O (CENTER_O - 64)
-#define RIGHT_O (CENTER_O + 64)
-#define MIDDLE_O CENTER_O - 2
-#define TOP_O LEFT_O
-#define BOTTOM_O RIGHT_O
-
 #define CR_WINDOW_NAME "Color Reader"
 
 using namespace cv;
@@ -45,7 +39,7 @@ class ColorReader
         image_transport::ImageTransport it;
         image_transport::Subscriber sub;
         image_transport::Publisher pub;
-        vector<int> colors;
+        vector<vector<int> > colors;
         Mat cube_image;
         int counter;
 
@@ -53,7 +47,9 @@ class ColorReader
         void callback(const sensor_msgs::ImageConstPtr& msg);
         void inspect_face(Mat& image);
         void print_colors();
-        int extract_color(Mat& image, int x_offset, int y_offset);
+        int extract_color(Mat& image, int x_offset, int y_offset); 
+        vector<Rect> extract_rectangles(Mat& image, int color);
+        Mat threshold_image(Mat image, int color);
 
     public:
         
@@ -61,7 +57,7 @@ class ColorReader
         ColorReader();
         ColorReader(ros::NodeHandle handle);
         ~ColorReader();
-        vector<int> get_colors();
+        vector<vector<int> > get_colors();
 };
 
 #endif // COLOR_READER_CLASS_HPP

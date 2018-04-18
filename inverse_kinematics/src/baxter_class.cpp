@@ -75,6 +75,10 @@ void Baxter::pickup_cube()
         case PICKUP:
             this->grab_cube();
             break;
+
+        case RESET_ARMS:
+            this->reset_arms(INSPECT_CUBE);
+            break;
     }
 }
 
@@ -91,6 +95,10 @@ void Baxter::inspect_cube()
 
         case READ_TOP: 
             this->read_top();
+            break;
+
+        case SWAP_HANDS:
+            this->swap_hands();
             break;
 
         case READ_BACK:
@@ -118,17 +126,16 @@ void Baxter::turning_demo()
             break;
         
         case RIGHT_TURN_CCW:
-            this->state = DONE;
-            //this->lr_turn(RIGHT, CCW);
+            this->lr_turn(RIGHT, CCW);
             break;
         
         case LEFT_TURN_CCW:
-            //this->lr_turn(LEFT, CCW);
+            this->lr_turn(LEFT, CCW);
             break;
 
         case TEARDOWN:
-            ros::Duration(5.0).sleep();
-            this->reset_arms();
+            this->display.make_face(HAPPY);
+            this->reset_arms(DONE);
             break;
     }
 }

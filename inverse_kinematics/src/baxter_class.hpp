@@ -25,20 +25,22 @@
 #define FIX_POSITION 4
 #define LOWERING 5
 #define PICKUP 6
+#define RESET_ARMS 7
 
-#define INSPECT_CUBE 7 
-#define READ_BOTTOM 7
-#define READ_TOP 8
-#define READ_BACK 9
-#define READ_FRONT 10
+#define INSPECT_CUBE 8
+#define READ_BOTTOM 8
+#define READ_TOP 9
+#define SWAP_HANDS 10
+#define READ_BACK 11
+#define READ_FRONT 12
 
-#define TURN_DEMO 11
-#define RIGHT_TURN_CW 11
-#define LEFT_TURN_CW 12
-#define RIGHT_TURN_CCW 13
-#define LEFT_TURN_CCW 14
+#define TURN_DEMO 13
+#define RIGHT_TURN_CW 13
+#define LEFT_TURN_CW 14
+#define RIGHT_TURN_CCW 15
+#define LEFT_TURN_CCW 16
 
-#define TEARDOWN -1
+#define TEARDOWN 17
 #define DONE -2
 #define INCREMENT -3
 
@@ -70,18 +72,19 @@ class Baxter
         void fix_position();
         void lower_arm(); 
         void grab_cube(); 
-        void reset_arms();
+        void reset_arms(int new_state);
         
         void read_bottom(); 
         void read_top();
         void read_back();
         void read_front();
+        void swap_hands();
         bool bring_arm_center(Arm * arm);
         bool bring_arm_up(Arm * arm);
         
         bool change_hands();
         void lr_turn(bool side, float direction);
-        void increment(bool direction, bool side, bool do_it = false);
+        void increment(bool direction, bool side, float to_here = -1);
         void turning_report(bool side, float direction);
 
     public:

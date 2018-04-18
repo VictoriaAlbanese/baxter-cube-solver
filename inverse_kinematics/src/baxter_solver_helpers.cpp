@@ -19,12 +19,13 @@ bool Baxter::change_hands()
     bool side = this->other_arm->side();
     float offset_y = this->other_arm->get_endpoint_y();
     Arm * temp = NULL;
-    
+   
     switch(this->count) 
     {
         case 0:
             ROS_INFO("CHANGING HANDS...");
-            this->other_arm->turn_wrist_to(CW);
+            if (side == LEFT) this->other_arm->turn_wrist_to(CW);
+            else this->other_arm->turn_wrist_to(UP);
             this->count = 1;
             break;
                 
@@ -43,9 +44,9 @@ bool Baxter::change_hands()
         case 3: 
             side = this->holding_arm->side();
             offset_y = this->holding_arm->get_endpoint_y();
-            if (side == LEFT && offset_y < L_AWAY) this->increment(LEFT, OPPOSITE, true);
-            else if (side == RIGHT && offset_y > R_AWAY) this->increment(RIGHT, OPPOSITE, true);
-            else this->count = 4;
+            if (side == LEFT) this->increment(LEFT, OPPOSITE, L_AWAY);
+            else if (side == RIGHT) this->increment(RIGHT, OPPOSITE, R_AWAY);
+            this->count = 4;
             break;
     
         case 4:
@@ -68,7 +69,7 @@ void Baxter::lr_turn(bool side, float direction)
 {
     if (this->other_arm->side() == side) this->action_complete = true;
     else this->action_complete = this->change_hands();
-        
+   
     float offset_y = this->other_arm->get_endpoint_y();
     if (this->action_complete)
     {
@@ -81,49 +82,48 @@ void Baxter::lr_turn(bool side, float direction)
         switch(this->count) 
         {
             case 0:
-                ROS_INFO("\tturning wrist up");
                 this->other_arm->turn_wrist_to(UP);
                 this->count = 1;
                 break;
-    
+     
             case 1:
-                ROS_INFO("\tmoving to soft hold");
-                //if (side == RIGHT) ROS_INFO("right  [%f] < [%f]", offset_y, R_SOFT_HOLD);
-                //else if (side == LEFT) ROS_INFO("left [%f] > [%f]", offset_y, L_SOFT_HOLD);
+                if (side == LEFT) this->increment(LEFT, OPPOSITE, R_FIRM_HOLD);
+                else if (side == RIGHT) this->increment(RIGHT, OPPOSITE, L_FIRM_HOLD);
+                this->count = 2; 
+                break;
+
+            case 2:
                 if (side == LEFT && offset_y > L_SOFT_HOLD) this->increment(RIGHT, SAME);
                 else if (side == RIGHT && offset_y < R_SOFT_HOLD) this->increment(LEFT, SAME);
-                else this->count = 2; 
+                else this->count = 3; 
                 break;
        
-           case 2:  
-                ROS_INFO("\tgripping & turning cube");
+           case 3:  
                 ros::Duration(0.5).sleep();
                 this->other_arm->gripper.grip();
                 this->other_arm->turn_wrist_to(direction);
-                this->count = 3;
-                break;
-    
-           case 3:
-                ROS_INFO("\treleasing cube");
-                ros::Duration(0.5).sleep();
-                this->other_arm->gripper.release();
                 this->count = 4;
                 break;
-                  
-            case 4:
-                ROS_INFO("\tmoving away");
-                if (side == RIGHT && offset_y > R_AWAY) this->increment(RIGHT, SAME, true); 
-                else if (side == LEFT && offset_y < L_AWAY) this->increment(LEFT, SAME, true);
-                else this->count = 5;
+    
+           case 4:
+                ros::Duration(0.5).sleep();
+                this->other_arm->gripper.release();
+                this->count = 5;
                 break;
-                    
-            case 5: 
-                ROS_INFO("\tturning wrist up");
-                this->other_arm->turn_wrist_to(UP);
+                  
+            case 5:
+                if (side == RIGHT) this->increment(RIGHT, SAME, R_AWAY); 
+                else if (side == LEFT) this->increment(LEFT, SAME, L_AWAY);
                 this->count = 6;
                 break;
+                    
+            case 6: 
+                if (side == LEFT) this->other_arm->turn_wrist_to(CW);
+                else this->other_arm->turn_wrist_to(UP);
+                this->count = 7;
+                break;
     
-            case 6:
+            case 7:
                 this->move_on("TURN COMPLETE...", INCREMENT);
                 this->count = 0;
                 break;
@@ -134,46 +134,23 @@ void Baxter::lr_turn(bool side, float direction)
 // INCREMENT FUNCTION
 // increments the y coordinate of the endpoint of the 
 // other arm in the specified direction (left/right)
-void Baxter::increment(bool direction, bool side, bool do_it) 
+void Baxter::increment(bool direction, bool side, float to_here) 
 {
     Arm * arm = this->other_arm;
     if (side == OPPOSITE) arm = this->holding_arm;
 
-    //if (arm->side() == LEFT) ROS_INFO("about to move the left side");
-    //else if (arm->side() == RIGHT) ROS_INFO("about to move the right side");
-
     if (direction == LEFT) 
     {
-        if (!do_it) arm->adjust_endpoint(Y, -1, true);
-        else arm->adjust_endpoint(Y, L_AWAY);
+        if (to_here == -1) arm->adjust_endpoint(Y, -1, true);
+        else arm->adjust_endpoint(Y, to_here);
         while (!arm->move_to(ENDPOINT)) ros::spinOnce(); 
     }
 
     if (direction == RIGHT) 
     {
-        if (!do_it) arm->adjust_endpoint(Y, 1, true);
-        else arm->adjust_endpoint(Y, R_AWAY);
+        if (to_here == -1) arm->adjust_endpoint(Y, 1, true);
+        else arm->adjust_endpoint(Y, to_here);
         while (!arm->move_to(ENDPOINT)) ros::spinOnce();
-    }
-}
-
-// TURNING REPORT FUNCTION
-// literally just prints info... printing logic took up a 
-// lot of space so it was refactored meaninglessly yay neatness
-void Baxter::turning_report(bool side, float direction)
-{
-    if (side == LEFT) 
-    {
-        if (direction == CW) ROS_INFO("TURNING LEFT FACE CLOCKWISE 90 DEGREES");
-        else if (direction == CCW) ROS_INFO("TURNING LEFT FACE COUNTERCLOCKWISE 90 DEGREES");
-        else if (direction == CW2 || direction == CCW2) ROS_INFO("TURNING LEFT FACE 180 DEGREES");
-    }
-
-    if (side == RIGHT) 
-    {
-        if (direction == CW) ROS_INFO("TURNING RIGHT FACE CLOCKWISE 90 DEGREES");
-        else if (direction == CCW) ROS_INFO("TURNING RIGHT FACE COUNTERCLOCKWISE 90 DEGREES");
-        else if (direction == CW2 || direction == CCW2) ROS_INFO("TURNING RIGHT FACE 180 DEGREES");
     }
 }
 

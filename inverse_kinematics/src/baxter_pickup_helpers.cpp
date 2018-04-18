@@ -23,16 +23,16 @@ void Baxter::initialize_arms()
             ROS_INFO("INITIALIZING ARMS...");
             this->holding_arm->move_to(HOME);
             this->other_arm->move_to(HOME);
-            /*if (!this->holding_arm->gripper.calibrated()) this->holding_arm->gripper.calibrate();
+            if (!this->holding_arm->gripper.calibrated()) this->holding_arm->gripper.calibrate();
             if (!this->other_arm->gripper.calibrated()) this->other_arm->gripper.calibrate();
             this->holding_arm->gripper.release();
-            this->other_arm->gripper.release();*/
+            this->other_arm->gripper.release();
             this->first = false;
         }
                     
         else 
         {
-            this->move_on("ARMS INITIALIZED...", INSPECT_CUBE);//OVER_CUBE); 
+            this->move_on("ARMS INITIALIZED...", OVER_CUBE); 
             this->display.make_face(THINKING);
             ROS_INFO("LOOKING FOR CUBE...");
         }
@@ -192,12 +192,12 @@ void Baxter::grab_cube()
         this->first = false;
     }
             
-    else this->move_on("CUBE GRABBED...", INSPECT_CUBE); 
+    else this->move_on("CUBE GRABBED...", RESET_ARMS); 
 }
 
 // RESET ARMS FUNCTION
 // brings arms back to initial position
-void Baxter::reset_arms() 
+void Baxter::reset_arms(int next_state) 
 {
     if (this->first) 
     { 
@@ -207,7 +207,7 @@ void Baxter::reset_arms()
         this->first = false;
     }
                 
-    else this->move_on("ARMS RESET...", DONE); 
+    else this->move_on("ARMS RESET...", next_state); 
 }
 
 ////////////////////////////////////////////////////////////////

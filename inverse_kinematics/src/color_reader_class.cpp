@@ -9,6 +9,10 @@
 ////////////////////////////////////////////////////////////////
 
 #include "color_reader_class.hpp"
+string color_converter(int color); 
+
+bool by_x_coord(Point p1, Point p2) { return p1.x < p2.x; };
+bool by_y_coord(Point p1, Point p2) { return p1.y < p2.y; };
 
 ////////////////////////////////////////////////////////////////
 
@@ -35,12 +39,12 @@ ColorReader::ColorReader() : it(nh)
 ColorReader::ColorReader(ros::NodeHandle handle) : it(handle)
 {
     this->initialized = false;
-
+    
     namedWindow(CR_WINDOW_NAME);
     this->pub = it.advertise("/color_reader/output_video", 1);
     this->sub = it.subscribe("/cameras/head_camera/image", 1, &ColorReader::callback, this);
     this->counter = 0;
-
+    
     while (!this->initialized) ros::spinOnce();
 }
 
@@ -54,7 +58,7 @@ ColorReader::~ColorReader()
 // GET COLORS
 // prints the colors in the current vector 
 // and also returns a list of them
-vector<int> ColorReader::get_colors() 
+vector<vector<int> > ColorReader::get_colors() 
 { 
     for (int i = 0; i < 200; i++) ros::spinOnce();
     this->print_colors();
@@ -72,7 +76,7 @@ vector<int> ColorReader::get_colors()
 void ColorReader::callback(const sensor_msgs::ImageConstPtr& msg)
 {
     this->initialized = true;
-
+    
     // Try and get the image from the ros topic
     cv_bridge::CvImagePtr cv_ptr;
     try { cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8); }
@@ -83,13 +87,11 @@ void ColorReader::callback(const sensor_msgs::ImageConstPtr& msg)
     }
 
     // Crop the image
-    //Rect rect(430, 235, 100, 100);
-    //Mat cropped = cv_ptr->image(rect);
-    //resize(cropped, cv_ptr->image, Size(SIZE, SIZE));
+    Rect rect(275, 115, 425, 325);
+    Mat cropped = cv_ptr->image(rect);
+    resize(cropped, cv_ptr->image, Size(SIZE, SIZE));
 
     // Get the color of each cubie
-    Rect outline(10, 30, 50, 50);
-    rectangle(cv_ptr->image, outline, Scalar(255, 0, 0), 2);
     this->inspect_face(cv_ptr->image);
 
     // Update window
@@ -100,25 +102,182 @@ void ColorReader::callback(const sensor_msgs::ImageConstPtr& msg)
     pub.publish(cv_ptr->toImageMsg());
 }
 
-
 // INSPECT FACE FUNCTION
-// extracts the colors in a predetermined location 
-// where the cube is supposed to be, getting a color 
-// reading for each cubie & returning a vector of them
+// fills out the colors of each cubie on the face of a rubik's cube
 void ColorReader::inspect_face(Mat& image) 
 {
-    vector<int> cube_colors;
-    cube_colors.push_back(extract_color(image, LEFT_O, TOP_O));
-    cube_colors.push_back(extract_color(image, CENTER_O, TOP_O));
-    cube_colors.push_back(extract_color(image, RIGHT_O, TOP_O));
-    cube_colors.push_back(extract_color(image, LEFT_O, MIDDLE_O));
-    cube_colors.push_back(extract_color(image, CENTER_O, MIDDLE_O));
-    cube_colors.push_back(extract_color(image, RIGHT_O, MIDDLE_O));
-    cube_colors.push_back(extract_color(image, LEFT_O, BOTTOM_O));
-    cube_colors.push_back(extract_color(image, CENTER_O, BOTTOM_O));
-    cube_colors.push_back(extract_color(image, RIGHT_O, BOTTOM_O));
+    // some happy variables
+    vector<Point> points;
+    vector<pair<int, Rect> > rectangles;
+    vector<Rect> temp;
 
-    this->colors = cube_colors;
+    // make a list of pairs consisting of colors
+    // and rectangles associated with that color
+    for (int i = 1; i < 6; i++) 
+    {
+        temp = extract_rectangles(image, i);
+        for (int j = 0; j < temp.size(); j++) 
+        {
+            if (temp[j].height != 0) rectangles.push_back(make_pair(i, temp[j])); 
+        }
+    }
+
+    // Break up rectangles associated with more than one cubie
+    for (int i = 0; i < rectangles.size(); i++) 
+    {
+        float x = rectangles[i].second.x;
+        float y = rectangles[i].second.y;
+        float h = rectangles[i].second.height;
+        float w = rectangles[i].second.width;
+        int h_num = round(h / 60.0);
+        int w_num = round(w / 60.0);
+
+        for (int j = 0; j < w_num; j++) 
+        {
+            for (int k = 0; k < h_num; k++) 
+            {
+                int p_x = x + w * ((j + 1) * 2 - 1) / (2 * w_num);
+                int p_y = y + h * ((k + 1) * 2 - 1) / (2 * h_num);
+                points.push_back(Point(p_x, p_y));
+            }
+        }
+    }
+
+    // Find the smallest x/y positions
+    float smallest_x = INT_MAX;
+    float smallest_y = INT_MAX;
+    for (int i = 0; i < points.size(); i++) 
+    {
+        if (points[i].x < smallest_x) smallest_x = points[i].x;
+        if (points[i].y < smallest_y) smallest_y = points[i].y;
+    }
+
+    // Subtract smallest x/y positions from all keypoints to "normalize"
+    for (int i = 0; i < points.size(); i++) 
+    {
+        points[i].x-= smallest_x;
+        points[i].y-= smallest_y;
+    }
+     
+    // Fill out a vector with all white
+    vector<vector<int> > face_colors;
+    vector<int> white_vector;
+    for (int i = 0; i < 3; i++) white_vector.push_back(WHITE);
+    for (int i = 0; i < 3; i++) face_colors.push_back(white_vector);
+
+    // Print info on each keypoint and fill the face
+    for (int i = 0; i < points.size(); i++) 
+    {
+        float x = points[i].x;
+        float y = points[i].y;
+        float row = round(y / 60.0);
+        float col = round(x / 60.0);
+
+        /*
+        ROS_INFO("================");
+        ROS_INFO("\tx: %f", x); 
+        ROS_INFO("\ty: %f", y); 
+        ROS_INFO("\trow: %f col: %f", row, col); 
+        ROS_INFO("\t%s", color_converter(extract_color(image, x + smallest_x, y + smallest_y)).c_str());
+        */
+
+        if (row < 3 && col < 3) face_colors[row][col] = extract_color(image, x + smallest_x, y + smallest_y);
+    }
+
+    this->colors = face_colors;
+    //print_colors();
+    //ros::Duration(2).sleep();
+    imshow("centers", image);
+}
+
+// EXTRACT COLOR FUNCTION
+// detects blobs of the specified color on the specified 
+// image and returns infomration about the blobs as keypoints
+vector<Rect> ColorReader::extract_rectangles(Mat& image, int color) 
+{
+    // Convert original to hsv, filter by color
+    Mat hsv_image, filtered_image;
+    cvtColor(image, hsv_image, COLOR_BGR2HSV); 
+    filtered_image = threshold_image(hsv_image, color);
+
+    // Morphological opening & closing to filter out noise and close holes
+    erode(filtered_image, filtered_image, getStructuringElement(MORPH_ELLIPSE, Size(7, 7)));
+    dilate(filtered_image, filtered_image, getStructuringElement(MORPH_ELLIPSE, Size(10, 10))); 
+    erode(filtered_image, filtered_image, getStructuringElement(MORPH_ELLIPSE, Size(15, 15)));
+
+    // Find the edges of the color blob
+    Mat edge, draw;
+    Canny(filtered_image, edge, 50, 150, 3);
+    dilate(edge, edge, getStructuringElement(MORPH_ELLIPSE, Size(20, 20))); 
+    edge.convertTo(draw, CV_8U);
+
+    // Extract contours of the canny image
+    vector<vector<Point> > contours;
+    vector<Vec4i> hierarchy;
+    findContours(draw, contours, hierarchy, CV_RETR_TREE , CV_CHAIN_APPROX_SIMPLE);
+    Mat output = image.clone();
+
+    // Get the bounding rectangles about each blob
+    vector<vector<Point> > contours_poly(contours.size());
+    vector<Rect> bounding_rectangles(contours.size());
+    vector<Point2f> centers(contours.size());
+    vector<float> radii(contours.size());
+    for (int i = 0; i < contours.size(); i++ )
+    {
+        if (contourArea(contours[i]) < 1000) continue;  // ignore contours that are too small
+        if (hierarchy[i][3] < 0) continue;              // ignore "outer" contours
+
+        approxPolyDP(Mat(contours[i]), contours_poly[i], 3, true);
+        bounding_rectangles[i] = boundingRect(Mat(contours_poly[i]));
+    }
+
+    // Draw each bounding rectangle
+    for (int i = 0; i < bounding_rectangles.size(); i++ )
+    {
+        rectangle(output, bounding_rectangles[i].tl(), bounding_rectangles[i].br(), Scalar(0, 255, 0), 2, 8, 0);
+    }
+
+    // Make the color windows appear & return the bounding rectangles
+    imshow(color_converter(color).c_str(), output);
+    return bounding_rectangles;
+}
+
+// FILTER COLOR FUNCTION
+// filters the given image by the specified color 
+// and does a bitflip to make blob tracking easier later on
+Mat ColorReader::threshold_image(Mat image, int color) 
+{
+    Mat filtered_image;
+    Mat1b filter1, filter2;
+
+    switch(color) 
+    {
+        case RED:
+           inRange(image, Scalar(0, 130, 65), Scalar(7, 200, 95 + 25), filter1); 
+           inRange(image, Scalar(170, 130, 65), Scalar(180, 200, 95 + 25), filter2);
+           filtered_image = filter1 | filter2; 
+           break;
+    
+        case ORANGE:
+           inRange(image, Scalar(4, 30, 90), Scalar(12, 255, 255), filtered_image); 
+           break;
+    
+        case YELLOW:
+           inRange(image, Scalar(12, 10, 60 - 20), Scalar(38, 255, 150 + 20), filtered_image); 
+           break;
+    
+        case GREEN:
+           inRange(image, Scalar(60, 100, 0), Scalar(80, 255, 255), filtered_image); 
+           break;
+    
+        case BLUE:
+            inRange(image, Scalar(100, 100, 0), Scalar(115, 255, 255), filtered_image); 
+            break;
+    }
+  
+    bitwise_not(filtered_image, filtered_image);
+
+    return filtered_image;
 }
 
 // EXTRACT COLOR FUNCTION
@@ -152,43 +311,75 @@ int ColorReader::extract_color(Mat& image, int x_offset, int y_offset)
     hue = (hue / (SIDE * SIDE)) * 2;
     saturation = (saturation / (SIDE * SIDE)) / 255.0 * 100;
     value = (value / (SIDE * SIDE)) / 255.0 * 100;
-    //printf("H: %.0f, S: %.0f, V: %.0f \n", hue, saturation, value);
+    //ROS_INFO("H: %.0f, S: %.0f, V: %.0f \n", hue, saturation, value);
 
     if (saturation < 30) color = WHITE;
     else 
     {
-        if (((hue >= 0 && hue < 14) || hue >= 249) && value < 88) color = RED;
-        else if ((hue >= 2 && hue <= 27) && value > 88) color = ORANGE;
-        else if (hue >= 32 && hue <= 62) color = YELLOW;
-        else if (hue >= 120 && hue <= 150) color = GREEN;
-        else if (hue >= 201 && hue <= 231) color = BLUE;
+        if (((hue >= 0 && hue < 14) || hue >= 249) && value < 95) color = RED;
+        else if ((hue >= 8 && hue <= 27) && value > 95) color = ORANGE;
+        else if (hue >= 24 && hue <= 76) color = YELLOW;
+        else if (hue >= 120 && hue <= 160) color = GREEN;
+        else if (hue >= 200 && hue <= 230) color = BLUE;
     }
 
     return color;
 }
 
-// PRINT COLORS
+// PRINT COLORS FUNCTION
 // prints a vector of colors nicely
 void ColorReader::print_colors() 
 {
     string color_string = "";
 
     for (int i = 0; i < 3; i++) 
-    {
+    {     
         for (int j = 0; j < 3; j++)
         {
-            if (this->colors[3 * i + j] == RED) color_string+= "red\t";
-            else if (this->colors[3 * i + j] == ORANGE) color_string+= "orange\t";
-            else if (this->colors[3 * i + j] == BLUE) color_string+= "blue\t";
-            else if (this->colors[3 * i + j] == GREEN) color_string+= "green\t";
-            else if (this->colors[3 * i + j] == YELLOW) color_string+= "yellow\t";
-            else if (this->colors[3 * i + j] == WHITE) color_string+= "white\t";
+            color_string = color_string + color_converter(this->colors[i][j]) + "\t";
         }
         
         color_string+= "\n";
     }
     
     cout << color_string << endl;
+}
+
+// COLOR CONVERTER FUNCTION
+// helper function to convert color number 
+// representations into strings woot
+string color_converter(int color) 
+{
+    string s;
+
+    switch (color) 
+    {
+        case RED:
+            s = "red";
+            break;
+
+        case ORANGE:
+            s = "orange";
+            break;
+
+        case YELLOW:
+            s = "yellow";
+            break;
+
+        case GREEN:
+            s = "green";
+            break;
+
+        case BLUE:
+            s = "blue";
+            break;
+
+        case WHITE:
+            s = "white";
+            break;
+    }
+
+    return s;
 }
 
 ////////////////////////////////////////////////////////////////
