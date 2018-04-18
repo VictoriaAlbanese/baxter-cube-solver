@@ -76,6 +76,7 @@ void Baxter::lr_turn(bool side, float direction)
         if (this->first) 
         {
             ROS_INFO("PERFORMING TURN...");   
+            this->display.make_face(THINKING);
             this->first = false;
         }
  
