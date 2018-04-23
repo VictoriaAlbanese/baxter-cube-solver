@@ -1,16 +1,4 @@
 # baxter-cube-solver
-This repo will hold all of the material related to my honors project, where I will try to enable Baxter, a two armed robot in the UML Robotics Lab, to solve a Rubik's cube. :)
+This repo will hold all of the material related to my honors project, where I will try to enable Baxter, a two armed robot in the UML Robotics Lab, to solve a Rubik's cube with humanoid movements, utilizing all seven degrees of freedom that his arms offer. This includes picking up the cube from a non-predetermined location, reading the colors of the cubies, developing an algorithm which returns a sequence of moves which, when performed, will solve the cube, and, finally, enabling Baxter to perform that sequence of moves on the cube.  I achieved success in all four parts of my project in varying degrees; however, I was not able to enable Baxter to solve the Rubik’s cube.  I have, however, produced a sufficient proof of concept, crafted an impressive demo, and have laid a solid foundation for this project to be completed in the future.
 
-## Current Work
-Baxter successfully moves his arm over the cube, makes adjustments, and then picks up the cube in many different positions.  Next steps are to fix bugs in the functionality, improve the robustness of the square finding algorithm, and clean up/refactor the existing code.
-
-   - adjust initial height
-   - make square-finding algorithm more robust
-   
- Also on the list may be to make baxter ambidexterous, to better define on the table which areas are "out of reach", to  take nice videos of it all working, and do a brief analysis on his success rate.
- 
-   - make baxter ambidexterous 
-   - define areas that are "out of reach"
-   - take nice videos
-   - quick success rate analysis
-  
+http://prezi.com/_ek0p5aepmbz/?utm_campaign=share&utm_medium=copy&rc=ex0share
